@@ -1,0 +1,5 @@
+/mnt/ncsudrive/v/vsharm22/ece721/project3/build/uarchsim/CMakeFiles/721sim.dir
+/mnt/ncsudrive/v/vsharm22/ece721/project3/build/riscv-base/fesvr/CMakeFiles/fesvr-static.dir
+/mnt/ncsudrive/v/vsharm22/ece721/project3/build/riscv-base/CMakeFiles/riscv.dir
+/mnt/ncsudrive/v/vsharm22/ece721/project3/build/riscv-base/softfloat/CMakeFiles/softfloat.dir
+/mnt/ncsudrive/v/vsharm22/ece721/project3/build/uarchsim/alu_ops/CMakeFiles/uarchsim-alu-ops.dir
