@@ -79,8 +79,8 @@ riscv-base/preinstall: riscv-base/fesvr/preinstall
 # Target rules for target riscv-base/CMakeFiles/riscv.dir
 
 # All Build rule for target.
-riscv-base/CMakeFiles/riscv.dir/all: riscv-base/fesvr/CMakeFiles/fesvr-static.dir/all
 riscv-base/CMakeFiles/riscv.dir/all: riscv-base/softfloat/CMakeFiles/softfloat.dir/all
+riscv-base/CMakeFiles/riscv.dir/all: riscv-base/fesvr/CMakeFiles/fesvr-static.dir/all
 	$(MAKE) -f riscv-base/CMakeFiles/riscv.dir/build.make riscv-base/CMakeFiles/riscv.dir/depend
 	$(MAKE) -f riscv-base/CMakeFiles/riscv.dir/build.make riscv-base/CMakeFiles/riscv.dir/build
 	$(CMAKE_COMMAND) -E cmake_progress_report /mnt/ncsudrive/v/vsharm22/ece721/project3/build/CMakeFiles  8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53
@@ -232,9 +232,9 @@ uarchsim/preinstall: uarchsim/alu_ops/preinstall
 # Target rules for target uarchsim/CMakeFiles/721sim.dir
 
 # All Build rule for target.
+uarchsim/CMakeFiles/721sim.dir/all: riscv-base/softfloat/CMakeFiles/softfloat.dir/all
 uarchsim/CMakeFiles/721sim.dir/all: riscv-base/fesvr/CMakeFiles/fesvr-static.dir/all
 uarchsim/CMakeFiles/721sim.dir/all: riscv-base/CMakeFiles/riscv.dir/all
-uarchsim/CMakeFiles/721sim.dir/all: riscv-base/softfloat/CMakeFiles/softfloat.dir/all
 uarchsim/CMakeFiles/721sim.dir/all: uarchsim/alu_ops/CMakeFiles/uarchsim-alu-ops.dir/all
 	$(MAKE) -f uarchsim/CMakeFiles/721sim.dir/build.make uarchsim/CMakeFiles/721sim.dir/depend
 	$(MAKE) -f uarchsim/CMakeFiles/721sim.dir/build.make uarchsim/CMakeFiles/721sim.dir/build
