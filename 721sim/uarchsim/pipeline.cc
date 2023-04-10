@@ -72,6 +72,7 @@ pipeline_t::pipeline_t(
     uint32_t  retire_width,
     uint32_t  fu_lane_matrix[],
     uint32_t  fu_lat[]
+    uint32_t  max_instr_bw_checkpoints
 ):
   processor_t(_sim,_mmu,_id),
   statsModule(this),
@@ -101,6 +102,8 @@ pipeline_t::pipeline_t(
   this->dispatch_width = dispatch_width;
   this->issue_width = issue_width;
   this->retire_width = retire_width;
+  this->max_instr_bw_checkpoints = rob_size/num_chkpts;
+  this->instr_renamed_since_last_chkpt = 0;
 
   #ifdef RISCV_MICRO_DEBUG
     mkdir("micros_log",S_IRWXU);
