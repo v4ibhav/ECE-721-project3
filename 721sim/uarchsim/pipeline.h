@@ -171,8 +171,8 @@ public:
 	    uint32_t  retire_width,
 	    uint32_t  fu_lane_matrix[],
 	    uint32_t  fu_lat[],
-		uint32_t  max_instr_bw_checkpoints,
-		uint64_t instr_renamed_since_laast_checkpoint
+			uint32_t  max_instr_bw_checkpoints,
+			uint64_t  instr_renamed_since_last_checkpoint
 	);
 
 	~pipeline_t();
@@ -218,6 +218,8 @@ public:
   uint64_t get_arch_reg_value(int reg_id); 
   uint64_t get_pc(){return get_state()->pc;}
   uint32_t get_instruction(uint64_t inst_pc);
+  uint32_t  max_instr_bw_checkpoints;
+	uint64_t  instr_renamed_since_last_checkpoint;
 
 private:
 //	sim_t* sim;
@@ -326,6 +328,7 @@ private:
 	// sub-stages (within the Rename Stage).
 	/////////////////////////////////////////////////////////////
 	pipeline_register* RENAME2;
+	
 
 	/////////////////////////////////////////////////////////////
 	// Register renaming modules.

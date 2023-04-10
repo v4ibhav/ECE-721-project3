@@ -199,6 +199,8 @@ void payload::map_to_actual(pipeline_t* proc, unsigned int index) {
 		// Stay in bad mode.
 		buf[index].good_instruction = false;
 		buf[index].db_index = DEBUG_INDEX_INVALID;
+		
+		
 	}
 }
 
@@ -258,6 +260,7 @@ void payload::rollback(unsigned int index) {
 
 	// Recompute the length.
 	length = MOD((PAYLOAD_BUFFER_SIZE + tail - head), PAYLOAD_BUFFER_SIZE);
+	
 }
 
 unsigned int payload::checkpoint() {

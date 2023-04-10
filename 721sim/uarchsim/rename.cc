@@ -49,8 +49,10 @@ void pipeline_t::rename1() {
 
 void pipeline_t::rename2() {
    unsigned int i;
+   unsigned int flag = 0;
    unsigned int index;
    unsigned int bundle_dst, bundle_branch;
+   unsigned int bundle_chkpts;
 
    // Stall the rename2 sub-stage if either:
    // (1) There isn't a current rename bundle.
@@ -65,6 +67,8 @@ void pipeline_t::rename2() {
    // Third stall condition: There aren't enough rename resources for the current rename bundle.
    bundle_dst = 0;
    bundle_branch = 0;
+   //3.3.2
+   bundle_chkpts = 0;
    for (i = 0; i < dispatch_width; i++) {
       if (!RENAME2[i].valid)
          break;			// Not a valid instruction: Reached the end of the rename bundle so exit loop.
@@ -85,10 +89,41 @@ void pipeline_t::rename2() {
       //    There is a flag in the instruction's payload that *directly* tells you if this instruction needs a checkpoint.
       //    Another field indicates whether or not the instruction has a destination register.
 
-      // FIX_ME #1 BEGIN
-      if(PAY.buf[index].checkpoint) bundle_branch++;
-      if(PAY.buf[index].C_valid) bundle_dst++;
+      db_t* actual;
+      if(PAY.buf[index].good_instruction)
+      {
+         actual = get_pipe()->peek(PAY.buf[index].db_index);
+      }
 
+
+      // FIX_ME #1 BEGIN
+      // if(PAY.buf[index].checkpoint) bundle_branch++;
+      // if(PAY.buf[index].C_valid) bundle_dst++;
+
+//3.3.2
+      if(IS_AMO(PAY.buf[index].flags) || IS_CSR(PAY.buf[index].flags))
+      {
+
+         bundle_chkpts +=2;
+
+      }
+      //check for the exception
+      else if(IS_BRANCH(PAY.buf[index].flags) && (PAY.buf[index].next_pc!=actual->a_next_pc))
+      {
+         bundle_chkpts +=1;
+      }
+
+      else if(actual->a_exception)
+      {
+         bundle_chkpts +=1;
+      }
+
+      if(instr_renamed_since_last_checkpoint+dispatch_width>max_instr_bw_checkpoints)
+      {
+         bundle_chkpts++;
+
+      }
+      REN->checkpoint(bundle_chkpts);
       // FIX_ME #1 END
    }
 
@@ -104,9 +139,11 @@ void pipeline_t::rename2() {
    // This is achieved by doing nothing and proceeding to the next statements.
 
    // FIX_ME #2 BEGIN
-   if((REN->stall_branch(bundle_branch))) return;
-   if((REN->stall_reg(bundle_dst))) return;
+   // if((REN->stall_branch(bundle_branch))) return;
+   // if((REN->stall_reg(bundle_dst))) return;
    // FIX_ME #2 END
+   //changes 3.3.2
+   if(REN->stall_checkpoint(bundle_chkpts);
 
    //
    // Sufficient resources are available to rename the rename bundle.
@@ -135,21 +172,33 @@ void pipeline_t::rename2() {
       if(PAY.buf[index].A_valid) 
       {
          PAY.buf[index].A_phys_reg = REN->rename_rsrc(PAY.buf[index].A_log_reg);
+         flag = 1;
+
       }
 
       if(PAY.buf[index].B_valid) 
       {
          PAY.buf[index].B_phys_reg = REN->rename_rsrc(PAY.buf[index].B_log_reg);
+         flag = 1;
+
       }
 
       if(PAY.buf[index].D_valid) 
       {
          PAY.buf[index].D_phys_reg = REN->rename_rsrc(PAY.buf[index].D_log_reg);
+         flag = 1;
+         
       }
 
       if(PAY.buf[index].C_valid) 
       {
          PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
+         flag = 1;
+      }
+      if(flag == 1)
+      {
+         instr_renamed_since_last_checkpoint++;
+         flag = 0;
       }
       // FIX_ME #3 END
 
@@ -182,8 +231,14 @@ void pipeline_t::rename2() {
       // FIX_ME #5 BEGIN
       if(PAY.buf[index].checkpoint)
       {
+
+
          PAY.buf[index].branch_ID = REN->checkpoint();
+         instr_renamed_since_last_checkpoint = 0;
+   
       }
+
+      
       // FIX_ME #5 END
    }
 

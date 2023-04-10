@@ -108,6 +108,7 @@ class renamer{
 	uint64_t rename_rdst(uint64_t log_reg);
 	uint64_t checkpoint();
 	bool stall_dispatch(uint64_t bundle_inst);
+    bool stall_checkpoint(uint64_t bundle_chkpts)
     uint64_t dispatch_inst(bool dest_valid,
 	                       uint64_t log_reg,
 	                       uint64_t phys_reg,
@@ -164,12 +165,16 @@ class renamer{
 	typedef struct checkPointBuffer_t{
 		int checkPointHead;
 		int checkPointTail;
+        int CheckPointHeadPhase;
+        int checkPointTailPhase;
 		int size;
 		int capacity;
 
 		std::vector<checkPointData_t> checkPointData;	
 		checkPointBuffer_t() : checkPointHead(0),
                                checkPointTail(0),
+                               checkPointTailPhase(0),
+                               checkPointHeadPhase(0),
                                size(1) {}
 	}checkPointBuffer_t;
     //changes 2

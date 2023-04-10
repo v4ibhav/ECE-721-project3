@@ -257,7 +257,7 @@ void pipeline_t::load_replay() {
 	 // FIX_ME #18a BEGIN
          IQ.wakeup(PAY.buf[index].C_phys_reg);
          REN->set_ready(PAY.buf[index].C_phys_reg);
-         REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);
+         REN->write(PAY.buf[index].C_phys_reg, PAY.buf[index].C_value.dw);      
          // FIX_ME #18a END
       }
 

@@ -50,9 +50,13 @@ renamer::renamer(uint64_t n_log_regs,uint64_t n_phys_regs,uint64_t n_branches,ui
     number_of_logical_reg   =   n_log_regs;
     number_of_physical_reg  =   n_phys_regs;
     total_active_instruction=   n_active;
-
+    
     /////////////////Branch Checkpoint allocation///////
     Branch_CheckPoint.resize(number_of_branches);
+
+    ////////////////checkpoint initializaiton//////////
+    checkPointBuffer_t CPR_BUFFER;
+    CPR_BUFFER.checkPointData.resize(n_log_regs);
     
 }
 
@@ -105,15 +109,14 @@ uint64_t renamer::rename_rdst(uint64_t log_reg)
 
 }
 
-uint64_t renamer::checkpoint()
+void renamer::checkpoint(unisgned int bundle_chk)
 {
     //find the branch id position inside gbm if there is one
-    uint64_t pos = 0;
-    uint64_t t_GBM = GBM;
+    // uint64_t pos = 0;
 
-    foru(i,number_of_branches)
+    foru(i,checkPointBuffer_t.size)
     {
-        if((t_GBM & 1) == 0 )
+        if((checkPointData & 1) == 0 )
         {
             pos = i;
             break;
@@ -127,7 +130,18 @@ uint64_t renamer::checkpoint()
     Branch_CheckPoint[pos].checkpoint_freelist_head_phase = FL.h_phase;
     Branch_CheckPoint[pos].checkpoint_GBM = GBM;
 
-    return  pos;
+
+    //check space inside the checkpoint
+    if(CPR_BUFFER.checkPointHeadPhase == AL.checkPointTailPhase)
+    {
+        return CPR_BUFFER.size - CPR_BUFFER.checkPointTail + CPR_BUFFER.checkPointHead;   
+    }
+    else
+    {
+        return CPR_BUFFER.checkPointHead - CPR_BUFFER.checkPointTail;
+    }
+
+    //return  pos;
 }
 
 bool renamer::stall_dispatch(uint64_t bundle_inst)
@@ -216,6 +230,7 @@ void renamer::resolve(uint64_t AL_index,uint64_t branch_ID,bool correct)
         {
             Branch_CheckPoint[i].checkpoint_GBM &= (~(1<<branch_ID));
         }
+
     }
     else
     {
@@ -376,6 +391,15 @@ uint64_t renamer::enteries_in_freelist()
     }
 }
 
+
+
+
+
+//change 3.3.2
+bool stall_checkpoint(uint64_t bundle_chkpts)
+{
+    return false;
+}
 
 
 
