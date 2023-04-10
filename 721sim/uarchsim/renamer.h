@@ -151,7 +151,7 @@ class renamer{
 		uint64_t store_Counter;
 		uint64_t branch_Counter;
 		std::vector<uint64_t> buffer;
-		t_checkPointData() : amo(0), 
+		checkPointData_t() : amo(0), 
                              csr(0),
                              exception(0),
                              instr_Counter(0),
@@ -167,11 +167,10 @@ class renamer{
 		int size;
 		int capacity;
 
-		std::vector<t_checkPointData> checkPointData;	
+		std::vector<checkPointData_t> checkPointData;	
 		checkPointBuffer_t() : checkPointHead(0),
                                checkPointTail(0),
                                size(1) {}
 	}checkPointBuffer_t;
     //changes 2
-
 };
