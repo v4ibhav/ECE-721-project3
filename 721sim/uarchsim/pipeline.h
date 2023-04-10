@@ -173,7 +173,7 @@ public:
 	    uint32_t  fu_lat[],
 		uint32_t  max_instr_bw_checkpoints,
 		uint64_t instr_renamed_since_laast_checkpoint
-		
+
 	);
 
 	~pipeline_t();
