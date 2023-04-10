@@ -172,6 +172,6 @@ class renamer{
                                checkPointTail(0),
                                size(1) {}
 	}checkPointBuffer_t;
-    //changes
+    //changes 2
 
 };
