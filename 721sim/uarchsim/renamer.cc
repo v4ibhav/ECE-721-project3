@@ -55,7 +55,6 @@ renamer::renamer(uint64_t n_log_regs,uint64_t n_phys_regs,uint64_t n_branches,ui
     Branch_CheckPoint.resize(number_of_branches);
 
     ////////////////checkpoint initializaiton//////////
-    checkPointBuffer_t CPR_BUFFER;
     CPR_BUFFER.checkPointData.resize(n_log_regs);
     
 }
@@ -109,22 +108,22 @@ uint64_t renamer::rename_rdst(uint64_t log_reg)
 
 }
 
-void renamer::checkpoint(unisgned int bundle_chk)
+void renamer::checkpoint(unsigned int bundle_chk)
 {
     //find the branch id position inside gbm if there is one
-    // uint64_t pos = 0;
+    uint64_t pos = 0;
 
-    foru(i,checkPointBuffer_t.size)
-    {
-        if((checkPointData & 1) == 0 )
-        {
-            pos = i;
-            break;
-        }
-        t_GBM  >>= 1;
-    }
+    // foru(i,checkPointBuffer_t.size)
+    // {
+    //     if((checkPointData & 1) == 0 )
+    //     {
+    //         pos = i;
+    //         break;
+    //     }
+    //     t_GBM  >>= 1;
+    // }
     
-    GBM = (GBM | (1<<pos)); //set the bit to 1
+    // GBM = (GBM | (1<<pos)); //set the bit to 1
     Branch_CheckPoint[pos].SMT = RMT;
     Branch_CheckPoint[pos].checkpoint_freelist_head = FL.head;
     Branch_CheckPoint[pos].checkpoint_freelist_head_phase = FL.h_phase;
@@ -132,13 +131,13 @@ void renamer::checkpoint(unisgned int bundle_chk)
 
 
     //check space inside the checkpoint
-    if(CPR_BUFFER.checkPointHeadPhase == AL.checkPointTailPhase)
+    if(CPR_BUFFER.checkPointHeadPhase == CPR_BUFFER.checkPointTailPhase)
     {
-        return CPR_BUFFER.size - CPR_BUFFER.checkPointTail + CPR_BUFFER.checkPointHead;   
+        CPR_BUFFER.capacity =  CPR_BUFFER.size - CPR_BUFFER.checkPointTail + CPR_BUFFER.checkPointHead;   
     }
     else
     {
-        return CPR_BUFFER.checkPointHead - CPR_BUFFER.checkPointTail;
+        CPR_BUFFER.capacity = CPR_BUFFER.checkPointHead - CPR_BUFFER.checkPointTail;
     }
 
     //return  pos;

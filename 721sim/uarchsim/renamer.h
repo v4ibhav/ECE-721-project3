@@ -87,12 +87,50 @@ class renamer{
                         checkpoint_freelist_head_phase(0),
                         checkpoint_GBM(0){};
     }CheckPoint;
+
+    typedef struct checkPointData_t{
+		bool amo;
+		bool csr;
+		bool exception;
+		uint64_t instr_Counter;
+		uint64_t load_Counter;
+		uint64_t store_Counter;
+		uint64_t branch_Counter;
+		std::vector<uint64_t> buffer;
+		checkPointData_t() : amo(0), 
+                             csr(0),
+                             exception(0),
+                             instr_Counter(0),
+                             load_Counter(0),
+                             store_Counter(0),
+                             branch_Counter(0) {}	
+
+	} checkPointData_t;
+	
+	typedef struct checkPointBuffer_t{
+		int checkPointHead;
+		int checkPointTail;
+        int checkPointHeadPhase;
+        int checkPointTailPhase;
+		int size;
+		int capacity;
+
+		std::vector<checkPointData_t> checkPointData;	
+		checkPointBuffer_t() : checkPointHead(0),
+                               checkPointTail(0),
+                               checkPointHeadPhase(0),
+                               checkPointTailPhase(0),
+                               size(1) {}
+	}checkPointBuffer_t;
+    
     
 
     FreeList FL;
     // ALRow AL_entries;
     ActiveList AL;
     vector<CheckPoint>  Branch_CheckPoint;
+    //changes 2
+    checkPointBuffer_t CPR_BUFFER;
 
 
 
@@ -108,7 +146,7 @@ class renamer{
 	uint64_t rename_rdst(uint64_t log_reg);
 	uint64_t checkpoint();
 	bool stall_dispatch(uint64_t bundle_inst);
-    bool stall_checkpoint(uint64_t bundle_chkpts)
+    bool stall_checkpoint(uint64_t bundle_chkpts);
     uint64_t dispatch_inst(bool dest_valid,
 	                       uint64_t log_reg,
 	                       uint64_t phys_reg,
@@ -140,42 +178,9 @@ class renamer{
 	bool get_exception(uint64_t AL_index);
     uint64_t enteries_in_freelist();
     uint64_t space_in_activelist();
+    void checkpoint(unsigned int bundle_chk);
 
 
 
-    typedef struct checkPointData_t{
-		bool amo;
-		bool csr;
-		bool exception;
-		uint64_t instr_Counter;
-		uint64_t load_Counter;
-		uint64_t store_Counter;
-		uint64_t branch_Counter;
-		std::vector<uint64_t> buffer;
-		checkPointData_t() : amo(0), 
-                             csr(0),
-                             exception(0),
-                             instr_Counter(0),
-                             load_Counter(0),
-                             store_Counter(0),
-                             branch_Counter(0) {}	
-
-	} checkPointData_t;
-	
-	typedef struct checkPointBuffer_t{
-		int checkPointHead;
-		int checkPointTail;
-        int CheckPointHeadPhase;
-        int checkPointTailPhase;
-		int size;
-		int capacity;
-
-		std::vector<checkPointData_t> checkPointData;	
-		checkPointBuffer_t() : checkPointHead(0),
-                               checkPointTail(0),
-                               checkPointTailPhase(0),
-                               checkPointHeadPhase(0),
-                               size(1) {}
-	}checkPointBuffer_t;
-    //changes 2
+    
 };
