@@ -16,7 +16,7 @@ renamer::renamer(uint64_t n_log_regs,uint64_t n_phys_regs,uint64_t n_branches,ui
     }
 
     ////////////////Free list allocation//////////////
-    i64t flsize = n_phys_regs - n_log_regs;
+    uint64_t flsize = n_phys_regs - n_log_regs;
     FL.FL_Size = flsize;
     FL.FL_entries.resize(flsize);
     FL.head =   FL.tail   =   0;
@@ -58,15 +58,15 @@ renamer::renamer(uint64_t n_log_regs,uint64_t n_phys_regs,uint64_t n_branches,ui
 
 bool renamer::stall_reg(uint64_t bundle_dst)
 {
-    i64t n_freelist_enteries = enteries_in_freelist();
+    uint64_t n_freelist_enteries = enteries_in_freelist();
     return (bundle_dst>n_freelist_enteries);
 }
 
 bool renamer::stall_branch(uint64_t bundle_branch)
 {
     //check number of set bits of GBM (number of 1)
-    i64t count_set_bits =    0;
-    i64t t_GBM =    GBM;
+    uint64_t count_set_bits =    0;
+    uint64_t t_GBM =    GBM;
     foru(i,number_of_branches)
     {
         if((t_GBM & 1) == true)   count_set_bits++;
@@ -88,7 +88,7 @@ uint64_t renamer::rename_rsrc(uint64_t log_reg)
 uint64_t renamer::rename_rdst(uint64_t log_reg)
 {
     //goto freelist head-->get the index 
-    i64t rmt_value = FL.FL_entries[FL.head];
+    uint64_t rmt_value = FL.FL_entries[FL.head];
 
     //increment the head 
     FL.head++;
@@ -108,8 +108,8 @@ uint64_t renamer::rename_rdst(uint64_t log_reg)
 uint64_t renamer::checkpoint()
 {
     //find the branch id position inside gbm if there is one
-    i64t pos = 0;
-    i64t t_GBM = GBM;
+    uint64_t pos = 0;
+    uint64_t t_GBM = GBM;
 
     foru(i,number_of_branches)
     {
@@ -132,13 +132,13 @@ uint64_t renamer::checkpoint()
 
 bool renamer::stall_dispatch(uint64_t bundle_inst)
 {
-    i64t AL_free_space = space_in_activelist();
+    uint64_t AL_free_space = space_in_activelist();
     return (AL_free_space<bundle_inst);  
 }
 
 uint64_t renamer::dispatch_inst(bool dest_valid,uint64_t log_reg,uint64_t phys_reg,bool load,bool store,bool branch,bool amo,bool csr,uint64_t PC)
 {
-    i64t index_of_instruction = AL.tail;
+    uint64_t index_of_instruction = AL.tail;
     
     //dest_valid if true then the instr. has a destination register.
     if(dest_valid)

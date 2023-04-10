@@ -7,27 +7,27 @@
 using namespace std;
 
 #define foru(i,n) for(uint64_t i = 0; i<n; i++)
-#define i64t	uint64_t
+// #define uint64_t	uint64_t
 
 class renamer{
     private:
     // all the structure inside this specifier
-    i64t    number_of_branches,      
+    uint64_t    number_of_branches,      
             number_of_logical_reg,
             number_of_physical_reg,
             total_active_instruction;
     
     //RMT
-    vector<i64t> RMT;
+    vector<uint64_t> RMT;
     //AMT
-    vector<i64t> AMT;
+    vector<uint64_t> AMT;
     //free list
     typedef struct FreeList{
-        vector<i64t> FL_entries;
-        i64t head;
-        i64t tail;
+        vector<uint64_t> FL_entries;
+        uint64_t head;
+        uint64_t tail;
         bool h_phase,t_phase;
-        i64t FL_Size;
+        uint64_t FL_Size;
         FreeList()  :   head(0),
                         tail(0),
                         h_phase(0),
@@ -37,7 +37,7 @@ class renamer{
     }FreeList;
 
     typedef struct ALRow{
-        i64t log_dest, phy_dest,prog_counter;
+        uint64_t log_dest, phy_dest,prog_counter;
         bool dest_flag,load_flag,store_flag,branch_flag,atomic_flag, CSR_flag;
         bool complete_bit,exception_bit, load_viol_bit,branch_misp_bit,value_misp_bit;
         ALRow():    log_dest(0),
@@ -59,10 +59,10 @@ class renamer{
     //active list
     typedef struct ActiveList{
         vector<ALRow> AL_entries;
-        i64t head;
-        i64t tail;
+        uint64_t head;
+        uint64_t tail;
         bool h_phase,t_phase;
-        i64t AL_size;
+        uint64_t AL_size;
         ActiveList() :  head(0),
                         tail(0),
                         h_phase(0),
@@ -71,17 +71,17 @@ class renamer{
         
     }ActiveList;
     //prf and prf bits
-    vector<i64t> PRF;
+    vector<uint64_t> PRF;
     vector<bool> PRF_bits;
     //gbm
 	uint64_t GBM;
     //checkpoint
     typedef struct CheckPoint
     {
-        vector<i64t>    SMT;
-        i64t            checkpoint_freelist_head;
+        vector<uint64_t>    SMT;
+        uint64_t            checkpoint_freelist_head;
         bool            checkpoint_freelist_head_phase;
-        i64t            checkpoint_GBM;
+        uint64_t            checkpoint_GBM;
         CheckPoint() :  SMT(0),
                         checkpoint_freelist_head(0),
                         checkpoint_freelist_head_phase(0),
@@ -142,5 +142,35 @@ class renamer{
 
 
 
+    typedef struct checkPointData_t{
+		bool amo;
+		bool csr;
+		bool exception;
+		uint64_t instr_Counter;
+		uint64_t load_Counter;
+		uint64_t store_Counter;
+		uint64_t branch_Counter;
+		std::vector<uint64_t> buffer;
+		t_checkPointData() : amo(0), 
+                             csr(0),
+                             exception(0),
+                             instrCounter(0),
+                             loadCounter(0),
+                             storeCounter(0),
+                             branchCounter(0) {}	
+                             	
+	} checkPointData_t;
+	
+	typedef struct t_checkPointBuffer{
+		int checkPointHead;
+		int checkPointTail;
+		int size;
+		int capacity;
+
+		std::vector<t_checkPointData> checkPointData;	
+		t_checkPointBuffer() : checkPointHead(0),
+                               checkPointTail(0),
+                               size(1) {}
+	}checkPointBuffer_t;
 
 };
