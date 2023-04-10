@@ -154,23 +154,24 @@ class renamer{
 		t_checkPointData() : amo(0), 
                              csr(0),
                              exception(0),
-                             instrCounter(0),
-                             loadCounter(0),
-                             storeCounter(0),
-                             branchCounter(0) {}	
-                             	
+                             instr_Counter(0),
+                             load_Counter(0),
+                             store_Counter(0),
+                             branch_Counter(0) {}	
+
 	} checkPointData_t;
 	
-	typedef struct t_checkPointBuffer{
+	typedef struct checkPointBuffer_t{
 		int checkPointHead;
 		int checkPointTail;
 		int size;
 		int capacity;
 
 		std::vector<t_checkPointData> checkPointData;	
-		t_checkPointBuffer() : checkPointHead(0),
+		checkPointBuffer_t() : checkPointHead(0),
                                checkPointTail(0),
                                size(1) {}
 	}checkPointBuffer_t;
+    //changes
 
 };
