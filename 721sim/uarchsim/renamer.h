@@ -169,11 +169,14 @@ class renamer{
     void resolve(uint64_t AL_index,
 		     uint64_t branch_ID,
 		     bool correct);
-	bool precommit(bool &completed,
-                       bool &exception, bool &load_viol, bool &br_misp, bool &val_misp,
-	               bool &load, bool &store, bool &branch, bool &amo, bool &csr,
-		       uint64_t &PC);
-	void commit();
+	// bool precommit(bool &completed,
+    //                    bool &exception, bool &load_viol, bool &br_misp, bool &val_misp,
+	//                bool &load, bool &store, bool &branch, bool &amo, bool &csr,
+	// 	       uint64_t &PC);
+    bool precommit(uint64_t &chkpt_id, uint64_t &num_loads,
+                uint64_t &num_stores, uint64_t &num_branches, bool &amo, bool &csr,
+                bool &exception);
+	void commit(uint64_t log_reg);
 	void squash();
     void set_exception(unsigned int checkpoint_ID);
 	void set_load_violation(uint64_t AL_index);

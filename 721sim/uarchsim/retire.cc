@@ -3,7 +3,7 @@
 #include "mmu.h"
 
 
-void pipeline_t::retire(size_t& instret) {
+void pipeline_t::retire(size_t& instret, size_t instret_limit) {
    bool head_valid;
    bool completed, exception, load_viol, br_misp, val_misp, load, store, branch, amo, csr;
    reg_t offending_PC;
@@ -47,8 +47,83 @@ void pipeline_t::retire(size_t& instret) {
    //      is squashed including the offending instruction.
 
    // FIX_ME #17a BEGIN
-   head_valid = REN->precommit(completed, exception, load_viol, br_misp, val_misp, load, store, branch, amo, csr, offending_PC);
+   // head_valid = REN->precommit(completed, exception, load_viol, br_misp, val_misp, load, store, branch, amo, csr, offending_PC);
+   //3.9.1
+   bool proceed = REN->precommit(RETSTATE.chkpt_id,
+   RETSTATE.num_loads_left, RETSTATE.num_stores_left,
+   RETSTATE.num_branches_left, RETSTATE.amo, RETSTATE.csr,
+   RETSTATE.exception);
+   bool flag = false;
    // FIX_ME #17a END
+   if(RETSTATE.state == RETIRE_IDLE)
+   {
+      if(!proceed)   return;
+      else{
+         // Sanity checks of the 'amo' and 'csr' flags.
+         assert(!RETSTATE.amo || IS_AMO(PAY.buf[PAY.head].flags));
+         assert(!RETSTATE.csr || IS_CSR(PAY.buf[PAY.head].flags));
+         if (RETSTATE.amo || RETSTATE.csr) {
+         // There should be only 1 instruction – the amo or csr –
+         // between the oldest and next oldest checkpoint.
+         // So the following assertions should succeed.
+         assert(RETSTATE.num_loads_left <= 1);
+         assert(RETSTATE.num_stores_left <= 1);
+         assert(RETSTATE.num_branches_left == 0);
+         // load and store are declared as local variables (bool)
+         load = (RETSTATE.num_loads_left > 0);
+         store = (RETSTATE.num_stores_left > 0);
+         }
+         if (!RETSTATE.exception) {
+         if (RETSTATE.amo && !(load || store)) { 
+         // amo, excluding load-with-reservation(LR) and store-conditional (SC)
+            RETSTATE.exception = execute_amo();
+         }
+         else if (csr) {
+            RETSTATE.exception = execute_csr();
+         } 
+         // This is probably optional.
+         // Just doing it out of completeness and adapting existing code.
+         if (RETSTATE.exception)
+         REN->set_exception(RETSTATE.chkpt_id);
+         }
+      }
+      if(RETSTATE.exception)
+      {
+         trap = PAY.buf[PAY.head].trap.get();
+
+         // CSR exceptions are micro-architectural exceptions and are
+         // not defined by the ISA. These must be handled exclusively by
+         // the micro-arch and is different from other exceptions specified
+         // in the ISA.
+         // This is a serialize trap - Refetch the CSR instruction
+         reg_t jump_PC;
+         if (trap->cause() == CAUSE_CSR_INSTRUCTION) {
+            jump_PC = offending_PC;
+         } 
+         else {
+            jump_PC = take_trap(*trap, offending_PC);
+         }
+
+         // Keep track of the number of retired instructions.
+	 instret++;
+	 num_insn++;	
+         inc_counter(commit_count);
+         inc_counter(exception_count);
+
+         // Compare pipeline simulator against functional simulator.
+         checker();
+
+         // Squash the pipeline.
+         squash_complete(jump_PC);
+         inc_counter(recovery_count);
+
+         // Flush PAY.
+         PAY.clear();
+      }
+   }
+
+
+   
 
    if (head_valid && completed) {    // AL head exists and completed
 
@@ -80,7 +155,7 @@ void pipeline_t::retire(size_t& instret) {
 	 //
 
          // FIX_ME #17b BEGIN
-         REN->commit();
+         // REN->commit();
          // FIX_ME #17b END
 
 	 // If the committed instruction is a load or store, signal the LSU to commit its oldest load or store, respectively.

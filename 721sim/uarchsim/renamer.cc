@@ -279,61 +279,53 @@ void renamer::resolve(uint64_t AL_index,uint64_t branch_ID,bool correct)
     }
 }
 
-bool renamer::precommit(bool &completed,bool &exception, bool &load_viol, bool &br_misp, bool &val_misp,bool &load, bool &store, bool &branch, bool &amo, bool &csr,uint64_t &PC)
-{
-    if((AL.head == AL.tail) && (AL.h_phase == AL.t_phase))
-    {
-        return false;
-    }
-    else
-    {
-        completed   =   AL.AL_entries[AL.head].complete_bit; 
-        exception   =   AL.AL_entries[AL.head].exception_bit; 
-        load_viol   =   AL.AL_entries[AL.head].load_viol_bit;
-        br_misp     =   AL.AL_entries[AL.head].branch_misp_bit;
-        val_misp    =   AL.AL_entries[AL.head].value_misp_bit;
-        load        =   AL.AL_entries[AL.head].load_flag;
-        store       =   AL.AL_entries[AL.head].store_flag;
-        branch      =   AL.AL_entries[AL.head].branch_flag;
-        amo         =   AL.AL_entries[AL.head].atomic_flag;
-        csr         =   AL.AL_entries[AL.head].CSR_flag;
-        PC          =   AL.AL_entries[AL.head].prog_counter;
-        return true;
+// bool renamer::precommit(bool &completed,bool &exception, bool &load_viol, bool &br_misp, bool &val_misp,bool &load, bool &store, bool &branch, bool &amo, bool &csr,uint64_t &PC)
+// {
+//     if((AL.head == AL.tail) && (AL.h_phase == AL.t_phase))
+//     {
+//         return false;
+//     }
+//     else
+//     {
+//         completed   =   AL.AL_entries[AL.head].complete_bit; 
+//         exception   =   AL.AL_entries[AL.head].exception_bit; 
+//         load_viol   =   AL.AL_entries[AL.head].load_viol_bit;
+//         br_misp     =   AL.AL_entries[AL.head].branch_misp_bit;
+//         val_misp    =   AL.AL_entries[AL.head].value_misp_bit;
+//         load        =   AL.AL_entries[AL.head].load_flag;
+//         store       =   AL.AL_entries[AL.head].store_flag;
+//         branch      =   AL.AL_entries[AL.head].branch_flag;
+//         amo         =   AL.AL_entries[AL.head].atomic_flag;
+//         csr         =   AL.AL_entries[AL.head].CSR_flag;
+//         PC          =   AL.AL_entries[AL.head].prog_counter;
+//         return true;
 
+//     }
+// }
+
+//3.9.1 
+bool renamer::precommit(uint64_t &chkpt_id, uint64_t &num_loads, uint64_t &num_stores, uint64_t &num_branches, 
+                            bool &amo, bool &csr, bool &exception)
+{
+    //That is, it returns true if
+    // there exists a checkpoint after the oldest checkpoint and if all instructions between
+    // them have completed.
+    //oldest checkpoint is CPR_BUFFER.checkPointInfo[head]
+    //newest checkpoint is CPR_BUFFER.checkPointInfo[tail-1]
+    int oldest_CheckPoint = CPR_BUFFER.checkPointHead;
+    int newest_CheckPoint = CPR_BUFFER.checkPointTail-1;
+    if((CPR_BUFFER.checkPointHead != CPR_BUFFER.checkPointTail-1) 
+        && (CPR_BUFFER.checkPointInfo[oldest_CheckPoint].instr_Counter == 0))
+    {
+        return true;
     }
+
 }
 
-void renamer::commit()
+void renamer::commit(uint64_t log_reg)
 {
-    // assert(AL.AL_size !=0);
-    assert(AL.AL_entries[AL.head].complete_bit == true);
-    assert(AL.AL_entries[AL.head].exception_bit != true);
-    assert(AL.AL_entries[AL.head].load_viol_bit != true);
-
-    if(AL.AL_entries[AL.head].dest_flag)
-    {
-        FL.FL_entries[FL.tail] = AMT[AL.AL_entries[AL.head].log_dest];
-
-        //increase the fl tail
-        FL.tail++;
-        if(FL.tail == FL.FL_Size) 
-        {
-            FL.tail = 0;
-            FL.t_phase = !FL.t_phase;
-        }
-
-        //now put the physical reg from AL to AMT and increase head pointer of the AL
-        AMT[AL.AL_entries[AL.head].log_dest] = AL.AL_entries[AL.head].phy_dest;
-    }
-
-    // increment head
-    AL.head++;
-    if(AL.head == AL.AL_size) 
-    {
-        //wrap up
-        AL.head = 0;
-        AL.h_phase = !AL.h_phase;
-    }
+    //goto logreg in usagecounter vecotor and decrement it
+    usage_Counter[log_reg]--;
 }
 
 void renamer::squash()
