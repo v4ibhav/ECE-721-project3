@@ -189,6 +189,8 @@ class renamer{
 
     uint64_t get_checkpoint_ID(bool load, bool store, bool branch, bool amo, bool  csr);
 
+    void free_checkpoint();
+
 
 
 

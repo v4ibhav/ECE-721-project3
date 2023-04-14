@@ -167,6 +167,7 @@ bool renamer::stall_dispatch(uint64_t bundle_inst)
     return (AL_free_space<bundle_inst);  
 }
 
+//dispatch the instruction
 uint64_t renamer::dispatch_inst(bool dest_valid,uint64_t log_reg,uint64_t phys_reg,bool load,bool store,bool branch,bool amo,bool csr,uint64_t PC)
 {
     uint64_t index_of_instruction = AL.tail;
@@ -314,42 +315,70 @@ bool renamer::precommit(uint64_t &chkpt_id, uint64_t &num_loads, uint64_t &num_s
     //newest checkpoint is CPR_BUFFER.checkPointInfo[tail-1]
     int oldest_CheckPoint = CPR_BUFFER.checkPointHead;
     int newest_CheckPoint = CPR_BUFFER.checkPointTail-1;
-    if((CPR_BUFFER.checkPointHead != CPR_BUFFER.checkPointTail-1) 
-        && (CPR_BUFFER.checkPointInfo[oldest_CheckPoint].instr_Counter == 0))
+    if(CPR_BUFFER.checkPointTail ==-1)
     {
-        return true;
+        newest_CheckPoint = CPR_BUFFER.size-1;
     }
 
+
+
+    if((CPR_BUFFER.checkPointHead == CPR_BUFFER.checkPointTail-1) 
+        || (CPR_BUFFER.checkPointInfo[oldest_CheckPoint].instr_Counter == 0))
+    {
+        return false;
+    }
+    chkpt_id    =   oldest_CheckPoint;
+    num_loads   =   CPR_BUFFER.checkPointInfo[oldest_CheckPoint].load_Counter;
+    num_stores  =   CPR_BUFFER.checkPointInfo[oldest_CheckPoint].store_Counter;
+    num_branches=   CPR_BUFFER.checkPointInfo[oldest_CheckPoint].branch_Counter;
+    amo         =   CPR_BUFFER.checkPointInfo[oldest_CheckPoint].amo;
+    csr         =   CPR_BUFFER.checkPointInfo[oldest_CheckPoint].csr;
+    exception   =   CPR_BUFFER.checkPointInfo[oldest_CheckPoint].exception;
+    return true;
 }
 
 void renamer::commit(uint64_t log_reg)
 {
     //goto logreg in usagecounter vecotor and decrement it
     usage_Counter[log_reg]--;
+    assert(usage_Counter[log_reg]>=0);
 }
 
 void renamer::squash()
 {
     //squashing all instruction first thing AMT will be copied to RMT
-    RMT = AMT;
+    RMT = CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].Checkpoint_of_rmt;
+
+    //unamapped bit roll back
+    foru(i,unmapped_Bit.size())
+    {
+        //check
+        if(PRF[i] != CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].Checkpoint_of_rmt[i])
+        {
+            unmapped_Bit[i] = 1;
+        }
+    }
+
     foru(i,PRF_bits.size())
     {
         PRF_bits[i] = 1;
     }
     
     // Active List will be emptied and phase are matched 
-    AL.tail = AL.head ;
-    AL.t_phase = AL.h_phase;
+    // AL.tail = AL.head ;
+    // AL.t_phase = AL.h_phase;
     
     //freelist is filled and phase are mismatched
     FL.head = FL.tail;
     FL.h_phase = !FL.t_phase;
+    //3.9.4 modifying renamer squash
 
-    GBM  = 0;
-    foru(i,number_of_branches)
-    {
-        Branch_CheckPoint[i].checkpoint_GBM = 0;
-    }
+
+    // GBM  = 0;
+    // foru(i,number_of_branches)
+    // {
+    //     Branch_CheckPoint[i].checkpoint_GBM = 0;
+    // }
 
 }
 //3.7
@@ -457,7 +486,26 @@ uint64_t renamer::get_checkpoint_ID(bool load , bool store, bool branch, bool am
 
 
 
-
+//3.9.4
+void renamer::free_checkpoint()
+{
+    //freeing the checkpoint
+    CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].load_Counter = 0;
+    CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].store_Counter = 0;
+    CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].branch_Counter = 0;
+    CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].amo = 0;
+    CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].csr = 0;
+    CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].exception = 0;
+    CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].instr_Counter = 0;
+    CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].Checkpoint_of_rmt.assign(CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].Checkpoint_of_rmt.size(),0);
+    //update the head of the checkpoint buffer
+    CPR_BUFFER.checkPointHead++;
+    if(CPR_BUFFER.checkPointHead == CPR_BUFFER.size)
+    {
+        CPR_BUFFER.checkPointHead = 0;
+        CPR_BUFFER.checkPointHeadPhase = !CPR_BUFFER.checkPointHeadPhase;
+    }
+}
 
 
 
