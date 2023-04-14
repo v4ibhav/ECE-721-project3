@@ -181,6 +181,7 @@ typedef struct {
                                 // which it is renamed.
   
    // Branch ID, for checkpointed branches only.
+   uint64_t checkPoint_ID; 
    unsigned int branch_ID;      // When a checkpoint is created for a branch,
                                 // this is the branch's ID (its bit position
                                 // in the Global Branch Mask).

@@ -327,8 +327,10 @@ void lsu::store_addr(cycle_t cycle,
    } 
    catch (mem_trap_t& t) {
       unsigned int al_index = proc->PAY.buf[SQ[sq_index].pay_index].AL_index;
+	  unsigned int checkpoint_ID = proc->PAY.buf[SQ[sq_index].pay_index].checkPoint_ID;
       assert((t.cause() == CAUSE_FAULT_STORE) || (t.cause() == CAUSE_MISALIGNED_STORE));
-      proc->set_exception(al_index);
+    //   proc->set_exception(al_index);
+	  proc->set_exception(checkpoint_ID);
       proc->PAY.buf[SQ[sq_index].pay_index].trap.post(t);
 
       return;
@@ -569,12 +571,14 @@ void lsu::execute_load(cycle_t cycle,
     catch (mem_trap_t& t)
 	  {
       unsigned int al_index = proc->PAY.buf[LQ[lq_index].pay_index].AL_index;
+	  uint64_t checkpoint_ID = proc->PAY.buf[LQ[lq_index].pay_index].checkPoint_ID;
       reg_t epc = proc->PAY.buf[LQ[lq_index].pay_index].pc;
 		  ifprintf(logging_on,proc->lsu_log, "Cycle %" PRIcycle ": core %3d: load exception %s, epc 0x%016" PRIx64 " badvaddr 0x%16" PRIx64 "\n",
 		          proc->cycle, proc->id, t.name(), epc, t.get_badvaddr());
 
       assert(t.cause() == CAUSE_FAULT_LOAD || t.cause() == CAUSE_MISALIGNED_LOAD);
-      proc->set_exception(al_index);
+    //   proc->set_exception(al_index);
+	  proc->set_exception(checkpoint_ID);
       proc->PAY.buf[LQ[lq_index].pay_index].trap.post(t);
 	  }
 
