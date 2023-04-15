@@ -65,8 +65,7 @@ renamer::renamer(uint64_t n_log_regs,uint64_t n_phys_regs,uint64_t n_branches,ui
     {
         CPR_BUFFER.checkPointInfo[i].Checkpoint_of_rmt.resize(n_log_regs);
     }
-    
-    
+        
 }
 
 bool renamer::stall_reg(uint64_t bundle_dst)
@@ -95,6 +94,7 @@ uint64_t renamer::get_branch_mask()
 
 uint64_t renamer::rename_rsrc(uint64_t log_reg)
 {
+    usage_Counter[RMT[log_reg]]++;
     return RMT[log_reg];
 }
 
@@ -114,6 +114,7 @@ uint64_t renamer::rename_rdst(uint64_t log_reg)
     }
 
     RMT[log_reg] = rmt_value;
+    usage_Counter[rmt_value]++;
     return rmt_value;
 
 }
@@ -151,7 +152,7 @@ void renamer::checkpoint()
     //update the usage counter
     foru(i,number_of_logical_reg)
     {
-        usage_Counter[CPR_BUFFER.checkPointInfo[tail].Checkpoint_of_rmt[i]]++;
+        inc_usage_counter(CPR_BUFFER.checkPointInfo[tail].Checkpoint_of_rmt[i]);
     }
     //upate the tail to next position
     CPR_BUFFER.checkPointTail++;
@@ -339,7 +340,7 @@ bool renamer::precommit(uint64_t &chkpt_id, uint64_t &num_loads, uint64_t &num_s
 
 void renamer::commit(uint64_t log_reg)
 {
-    //goto logreg in usagecounter vecotor and decrement it
+    //goto logreg in usagecounter vector and decrement it
     usage_Counter[log_reg]--;
     assert(usage_Counter[log_reg]>=0);
 }
@@ -350,12 +351,22 @@ void renamer::squash()
     RMT = CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].Checkpoint_of_rmt;
 
     //unamapped bit roll back
-    foru(i,unmapped_Bit.size())
+    unmapped_Bit.assign(unmapped_Bit.size(),1);
+    usage_Counter.assign(usage_Counter.size(),0);
+
+    //unmapped bit and usage counter reinstialized
+    foru(i,RMT.size())
     {
-        //check
-        if(PRF[i] != CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].Checkpoint_of_rmt[i])
+        unmapped_Bit[CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].Checkpoint_of_rmt[i]] = 0;
+        usage_Counter[CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].Checkpoint_of_rmt[i]] = 1;
+    }
+
+    //reinitialize free list
+    foru(i,PRF.size())
+    {
+        if((unmapped_Bit[i] == 1) && (usage_Counter[i] == 0))
         {
-            unmapped_Bit[i] = 1;
+            FL.FL_entries.push_back(i);
         }
     }
 
@@ -369,8 +380,8 @@ void renamer::squash()
     // AL.t_phase = AL.h_phase;
     
     //freelist is filled and phase are mismatched
-    FL.head = FL.tail;
-    FL.h_phase = !FL.t_phase;
+    // FL.head = FL.tail;
+    // FL.h_phase = !FL.t_phase;
     //3.9.4 modifying renamer squash
 
 
@@ -507,11 +518,24 @@ void renamer::free_checkpoint()
     }
 }
 
+void renamer::inc_usage_counter(uint64_t phys_reg)
+{
+    usage_Counter[phys_reg]++;
+}
 
-
-
-
-
-
-
-
+void renamer::dec_usage_counter(uint64_t phys_reg)
+{
+    assert(usage_Counter[phys_reg]>=0);
+    usage_Counter[phys_reg]--;
+    if((usage_Counter[phys_reg] == 0) && (unmapped_Bit[phys_reg] == 1))
+    {
+        FL.FL_entries[FL.tail] = phys_reg;
+        FL.tail++;
+        //check if tail is at the end of the FL
+        if(FL.tail == FL.FL_Size)
+        {
+            FL.tail = 0;
+            FL.t_phase = !FL.t_phase;
+        }
+    } 
+}

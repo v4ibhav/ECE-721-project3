@@ -233,6 +233,7 @@ public:
   uint32_t get_instruction(uint64_t inst_pc);
   uint32_t  max_instr_bw_checkpoints;
 	uint64_t  instr_renamed_since_last_checkpoint;
+  void update_timer(state_t* state, size_t instret);
 
 private:
 //	sim_t* sim;
@@ -430,6 +431,7 @@ public:
 	void set_load_violation(unsigned int al_index);
 	void set_branch_misprediction(unsigned int al_index);
 	void set_value_misprediction(unsigned int al_index);
+
 
   //TODO: Implement these functions
 	// Miscellaneous other functions.

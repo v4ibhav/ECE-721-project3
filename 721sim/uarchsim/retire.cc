@@ -171,13 +171,52 @@ void pipeline_t::retire(size_t& instret, size_t instret_limit) {
    if(RETSTATE.state == RETIRE_FINALIZE)
    {
       // Keep track of the number of retired instructions.
-     
+      while( (PAY.head != PAY.tail) && (PAY.buf[PAY.head].checkPoint_ID == RETSTATE.chkpt_id) )
+      {
+         if (IS_FP_OP(PAY.buf[PAY.head].flags)) {
+            // post the FP exception bit to CSR fflags (the Accrued Exception Flags)
+            get_state()->fflags |= PAY.buf[PAY.head].fflags;
+         }
+
+      // Check results.
+      checker();
+
+      // Keep track of the number of retired instructions.
+      num_insn++;
+      instret++;
+      inc_counter(commit_count);
+      if (PAY.buf[PAY.head].split && PAY.buf[PAY.head].upper)
+               num_insn_split++;
+
+      if (RETSTATE.amo || RETSTATE.csr) {   // Resume the stalled fetch unit after committing a serializing instruction.
+               insn_t inst = PAY.buf[PAY.head].inst;
+         reg_t next_inst_pc;
+               if ((inst.funct3() == FN3_SC_SB) && (inst.funct12() == FN12_SRET))  // SRET instruction.
+                  next_inst_pc = state.epc;
+         else
+            next_inst_pc = INCREMENT_PC(PAY.buf[PAY.head].pc);
+
+         // The serializing instruction stalled the fetch unit so the pipeline is now empty. Resume fetch.
+               FetchUnit->flush(next_inst_pc);
+
+         // Pop the instruction from PAY.
+         // if (!PAY.buf[PAY.head].split) PAY.pop();
+         PAY.pop();
+      }
+      else{
+            //pop the instruction from PAY.
+            if(!PAY.buf[PAY.head].split) PAY.pop();
+            PAY.pop();
+         }
+         update_timer(&state,1);
+         if(instret == instret_limit)
+         {
+            return;
+         }
+      }
+      RETSTATE.state = RETIRE_IDLE;       
    }
-
-
-
    
-
    // if (head_valid && completed) {    // AL head exists and completed
 
    //    // Sanity checks of the 'amo' and 'csr' flags.

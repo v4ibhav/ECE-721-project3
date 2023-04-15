@@ -203,18 +203,22 @@ void pipeline_t::rename2() {
       if(PAY.buf[index].A_valid) 
       {
          PAY.buf[index].A_phys_reg = REN->rename_rsrc(PAY.buf[index].A_log_reg);
+
       }
       if(PAY.buf[index].B_valid) 
       {
          PAY.buf[index].B_phys_reg = REN->rename_rsrc(PAY.buf[index].B_log_reg);
+
       }
       if(PAY.buf[index].D_valid) 
       {
          PAY.buf[index].D_phys_reg = REN->rename_rsrc(PAY.buf[index].D_log_reg);
+
       }
       if(PAY.buf[index].C_valid) 
       {
          PAY.buf[index].C_phys_reg = REN->rename_rdst(PAY.buf[index].C_log_reg);
+         
       }
 
       instr_renamed_since_last_checkpoint++;
