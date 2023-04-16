@@ -20,7 +20,7 @@ class renamer{
     //RMT
     vector<uint64_t> RMT;
     //AMT
-    vector<uint64_t> AMT;
+    // vector<uint64_t> AMT;
     //free list
     typedef struct FreeList{
         vector<uint64_t> FL_entries;
@@ -36,40 +36,7 @@ class renamer{
 
     }FreeList;
 
-    typedef struct ALRow{
-        uint64_t log_dest, phy_dest,prog_counter;
-        bool dest_flag,load_flag,store_flag,branch_flag,atomic_flag, CSR_flag;
-        bool complete_bit,exception_bit, load_viol_bit,branch_misp_bit,value_misp_bit;
-        ALRow():    log_dest(0),
-                    phy_dest(0),
-                    prog_counter(0),
-                    dest_flag(0),
-                    load_flag(0),
-                    store_flag(0),
-                    branch_flag(0),
-                    atomic_flag(0),
-                    CSR_flag(0),
-                    complete_bit(0),
-                    exception_bit(0),
-                    load_viol_bit(0),
-                    branch_misp_bit(0),
-                    value_misp_bit(0){};
-    }ALRow;
 
-    //active list
-    typedef struct ActiveList{
-        vector<ALRow> AL_entries;
-        uint64_t head;
-        uint64_t tail;
-        bool h_phase,t_phase;
-        uint64_t AL_size;
-        ActiveList() :  head(0),
-                        tail(0),
-                        h_phase(0),
-                        t_phase(0),
-                        AL_size(0) {};
-        
-    }ActiveList;
     //prf and prf bits
     vector<uint64_t> PRF; 
     vector<bool> unmapped_Bit;
@@ -122,7 +89,7 @@ class renamer{
 
 		vector<checkPointInfo_t> checkPointInfo;	
 		checkPoint_Rows() : checkPointHead(0),
-                               checkPointTail(0),
+                               checkPointTail(1), //tail always is empty 
                                checkPointHeadPhase(0),
                                checkPointTailPhase(0),
                                size(1) {}
@@ -132,7 +99,7 @@ class renamer{
 
     FreeList FL;
     // ALRow AL_entries;
-    ActiveList AL;
+    // ActiveList AL;
     vector<CheckPoint>  Branch_CheckPoint;
     //changes 2
     checkPoint_Rows CPR_BUFFER;
@@ -151,17 +118,17 @@ class renamer{
 	uint64_t rename_rsrc(uint64_t log_reg);
 	uint64_t rename_rdst(uint64_t log_reg);
 	
-	bool stall_dispatch(uint64_t bundle_inst);
+	// bool stall_dispatch(uint64_t bundle_inst);
     bool stall_checkpoint(uint64_t bundle_chkpts);
-    uint64_t dispatch_inst(bool dest_valid,
-	                       uint64_t log_reg,
-	                       uint64_t phys_reg,
-	                       bool load,
-	                       bool store,
-	                       bool branch,
-	                       bool amo,
-	                       bool csr,
-	                       uint64_t PC);
+    // uint64_t dispatch_inst(bool dest_valid,
+	//                        uint64_t log_reg,
+	//                        uint64_t phys_reg,
+	//                        bool load,
+	//                        bool store,
+	//                        bool branch,
+	//                        bool amo,
+	//                        bool csr,
+	//                        uint64_t PC);
 	bool is_ready(uint64_t phys_reg);
 	void clear_ready(uint64_t phys_reg);
 	uint64_t read(uint64_t phys_reg);
@@ -185,12 +152,12 @@ class renamer{
 
 	void squash();
     void set_exception(unsigned int checkpoint_ID);
-	void set_load_violation(uint64_t AL_index);
-	void set_branch_misprediction(uint64_t AL_index);
-	void set_value_misprediction(uint64_t AL_index);
-	bool get_exception(uint64_t AL_index);
+	// void set_load_violation(uint64_t AL_index);
+	// void set_branch_misprediction(uint64_t AL_index);
+	// void set_value_misprediction(uint64_t AL_index);
+	// bool get_exception(uint64_t AL_index);
     uint64_t enteries_in_freelist();
-    uint64_t space_in_activelist();
+    // uint64_t space_in_activelist();
     void checkpoint();
 
     uint64_t get_checkpoint_ID(bool load, bool store, bool branch, bool amo, bool  csr);
@@ -198,10 +165,4 @@ class renamer{
     void free_checkpoint();
     void inc_usage_counter(uint64_t phys_reg);
     void dec_usage_counter(uint64_t phys_reg);
-
-
-
-
-
-    
 };

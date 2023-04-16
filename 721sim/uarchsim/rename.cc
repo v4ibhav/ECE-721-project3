@@ -89,7 +89,7 @@ void pipeline_t::rename2() {
       // 3. The instruction's payload has all the information you need to count resource needs.
       //    There is a flag in the instruction's payload that *directly* tells you if this instruction needs a checkpoint.
       //    Another field indicates whether or not the instruction has a destination register.
-
+      // assert(false);
       db_t* actual;
       if(PAY.buf[index].good_instruction)
       {

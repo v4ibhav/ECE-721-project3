@@ -20,11 +20,18 @@ renamer::renamer(uint64_t n_log_regs,uint64_t n_phys_regs,uint64_t n_branches,ui
         FL.FL_entries[j] = j+n_log_regs; 
     }
 
-    ////////////////Active list allocation/////////////
-    AL.AL_size  =   n_active;
-    AL.AL_entries.resize(n_active);
-    AL.head    =    AL.tail    =   0;
-    AL.h_phase  =   AL.t_phase  =   0;
+    // ////////////////Active list allocation/////////////
+    // AL.AL_size  =   n_active;
+    // AL.AL_entries.resize(n_active);
+    // AL.head    =    AL.tail    =   0;
+    // AL.h_phase  =   AL.t_phase  =   0;
+
+    ////////////////checkpoint initializaiton//////////
+    CPR_BUFFER.checkPointInfo.resize(n_branches);
+    for(int i =0 ; i<n_branches;i++)
+    {
+        CPR_BUFFER.checkPointInfo[i].Checkpoint_of_rmt.resize(n_log_regs);
+    }
 
     //////////////PRF and PRF bits allocation///////////
     PRF.resize(n_phys_regs);
@@ -40,10 +47,11 @@ renamer::renamer(uint64_t n_log_regs,uint64_t n_phys_regs,uint64_t n_branches,ui
 
     ///////////////vector allocation/////////////////
     RMT.resize(n_log_regs);
-    AMT.resize(n_log_regs);
+    // AMT.resize(n_log_regs);
     foru(i,n_log_regs)
     {
-        RMT[i] = AMT[i] =    i;
+        //checkpoitn at head or 0 is like amt
+        RMT[i] = CPR_BUFFER.checkPointInfo[0].Checkpoint_of_rmt[i] = i;
         usage_Counter[i]=    1;
         unmapped_Bit[i] =    0;
     }
@@ -59,12 +67,6 @@ renamer::renamer(uint64_t n_log_regs,uint64_t n_phys_regs,uint64_t n_branches,ui
     /////////////////Branch Checkpoint allocation///////
     Branch_CheckPoint.resize(number_of_branches);
 
-    ////////////////checkpoint initializaiton//////////
-    CPR_BUFFER.checkPointInfo.resize(n_branches);
-    for(int i =0 ; i<n_branches;i++)
-    {
-        CPR_BUFFER.checkPointInfo[i].Checkpoint_of_rmt.resize(n_log_regs);
-    }
         
 }
 
@@ -167,51 +169,52 @@ void renamer::checkpoint()
     }
 }
 
-bool renamer::stall_dispatch(uint64_t bundle_inst)
-{
-    uint64_t AL_free_space = space_in_activelist();
-    return (AL_free_space<bundle_inst);  
-}
+// bool renamer::stall_dispatch(uint64_t bundle_inst)
+// {
+//     uint64_t AL_free_space = space_in_activelist();
+//     return (AL_free_space<bundle_inst);  
+// }
 
 //dispatch the instruction
-uint64_t renamer::dispatch_inst(bool dest_valid,uint64_t log_reg,uint64_t phys_reg,bool load,bool store,bool branch,bool amo,bool csr,uint64_t PC)
-{
-    uint64_t index_of_instruction = AL.tail;
+// uint64_t renamer::dispatch_inst(bool dest_valid,uint64_t log_reg,uint64_t phys_reg,bool load,bool store,bool branch,bool amo,bool csr,uint64_t PC)
+// {
+//     // uint64_t index_of_instruction = AL.tail;
     
-    //dest_valid if true then the instr. has a destination register.
-    if(dest_valid)
-    {
-        AL.AL_entries[AL.tail].log_dest = log_reg;
-        AL.AL_entries[AL.tail].phy_dest = phys_reg;
-    }
+//     // //dest_valid if true then the instr. has a destination register.
+//     // if(dest_valid)
+//     // {
+//     //     AL.AL_entries[AL.tail].log_dest = log_reg;
+//     //     AL.AL_entries[AL.tail].phy_dest = phys_reg;
+//     // }
 
-    //new instruction will clear all the old active list garbage values
-    AL.AL_entries[AL.tail].load_flag    =   load;
-    AL.AL_entries[AL.tail].store_flag   =   store;
-    AL.AL_entries[AL.tail].branch_flag  =   branch;
-    AL.AL_entries[AL.tail].atomic_flag  =   amo;
-    AL.AL_entries[AL.tail].CSR_flag     =   csr;
-    AL.AL_entries[AL.tail].dest_flag    =   dest_valid;
-    AL.AL_entries[AL.tail].complete_bit =   0;
-    AL.AL_entries[AL.tail].branch_misp_bit = 0 ;
-    AL.AL_entries[AL.tail].load_viol_bit = 0;
-    AL.AL_entries[AL.tail].exception_bit = 0;
-    AL.AL_entries[AL.tail].value_misp_bit = 0;
+//     // //new instruction will clear all the old active list garbage values
+//     // AL.AL_entries[AL.tail].load_flag    =   load;
+//     // AL.AL_entries[AL.tail].store_flag   =   store;
+//     // AL.AL_entries[AL.tail].branch_flag  =   branch;
+//     // AL.AL_entries[AL.tail].atomic_flag  =   amo;
+//     // AL.AL_entries[AL.tail].CSR_flag     =   csr;
+//     // AL.AL_entries[AL.tail].dest_flag    =   dest_valid;
+//     // AL.AL_entries[AL.tail].complete_bit =   0;
+//     // AL.AL_entries[AL.tail].branch_misp_bit = 0 ;
+//     // AL.AL_entries[AL.tail].load_viol_bit = 0;
+//     // AL.AL_entries[AL.tail].exception_bit = 0;
+//     // AL.AL_entries[AL.tail].value_misp_bit = 0;
 
-    AL.AL_entries[AL.tail].prog_counter =   PC;
+//     // AL.AL_entries[AL.tail].prog_counter =   PC;
 
 
-    //increment the tail
-    AL.tail++;
-    //wrap around
-    if(AL.tail == AL.AL_size)
-    {
-        AL.tail = 0;
-        AL.t_phase = !AL.t_phase;
-    }
+//     // //increment the tail
+//     // AL.tail++;
+//     // //wrap around
+//     // if(AL.tail == AL.AL_size)
+//     // {
+//     //     AL.tail = 0;
+//     //     AL.t_phase = !AL.t_phase;
+//     // }
 
-    return index_of_instruction;
-}
+//     // return index_of_instruction;
+//     return 0;
+// }
 
 bool renamer::is_ready(uint64_t phys_reg)
 {
@@ -418,36 +421,36 @@ void renamer::set_exception(unsigned int checkPoint_ID)
     CPR_BUFFER.checkPointInfo[checkPoint_ID].exception = 1;
 }
 
-void renamer::set_load_violation(uint64_t AL_index)
-{
-    AL.AL_entries[AL_index].load_viol_bit = 1;
-}
-void renamer::set_branch_misprediction(uint64_t AL_index)
-{
-    AL.AL_entries[AL_index].branch_misp_bit =1;
-}
+// void renamer::set_load_violation(uint64_t AL_index)
+// {
+//     // AL.AL_entries[AL_index].load_viol_bit = 1;
+// }
+// void renamer::set_branch_misprediction(uint64_t AL_index)
+// {
+//     // AL.AL_entries[AL_index].branch_misp_bit =1;
+// }
 
-void renamer::set_value_misprediction(uint64_t AL_index)
-{
-    AL.AL_entries[AL_index].value_misp_bit = 1;
-}
+// void renamer::set_value_misprediction(uint64_t AL_index)
+// {
+//     // AL.AL_entries[AL_index].value_misp_bit = 1;
+// }
 
-bool renamer::get_exception(uint64_t AL_index)
-{
-    return AL.AL_entries[AL_index].exception_bit;
-}
+// bool renamer::get_exception(uint64_t AL_index)
+// {
+//     // return AL.AL_entries[AL_index].exception_bit;
+// }
 
-uint64_t renamer::space_in_activelist()
-{
-    if(AL.h_phase == AL.t_phase)
-    {
-        return AL.AL_size - AL.tail + AL.head;   
-    }
-    else
-    {
-        return AL.head - AL.tail;
-    }
-}
+// uint64_t renamer::space_in_activelist()
+// {
+//     if(AL.h_phase == AL.t_phase)
+//     {
+//         return AL.AL_size - AL.tail + AL.head;   
+//     }
+//     else
+//     {
+//         return AL.head - AL.tail;
+//     }
+// }
 
 uint64_t renamer::enteries_in_freelist()
 {

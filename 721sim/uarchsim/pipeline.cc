@@ -742,17 +742,17 @@ uint32_t pipeline_t::get_instruction(uint64_t inst_pc){
 }
 
 void pipeline_t::set_exception(unsigned int checkPoint_ID) {
-   REN->set_exception(checkPoint_ID);
+  //  REN->set_exception(checkPoint_ID);
 }
 
 void pipeline_t::set_load_violation(unsigned int al_index) {
-   REN->set_load_violation(al_index);
+  //  REN->set_load_violation(al_index);
 }
 
 void pipeline_t::set_branch_misprediction(unsigned int al_index) {
-   REN->set_branch_misprediction(al_index);
+  //  REN->set_branch_misprediction(al_index);
 }
 
 void pipeline_t::set_value_misprediction(unsigned int al_index) {
-   REN->set_value_misprediction(al_index);
+  //  REN->set_value_misprediction(al_index);
 }

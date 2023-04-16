@@ -92,7 +92,7 @@ void pipeline_t::dispatch() {
    assert(i <= dispatch_width);		// There cannot be more than "dispatch_width" instructions in the dispatch bundle.
 
    // FIX_ME #6 BEGIN
-   if(REN->stall_dispatch(i)) return;
+   // if(REN->stall_dispatch(i)) return;
    // FIX_ME #6 END
 
    //
@@ -142,15 +142,15 @@ void pipeline_t::dispatch() {
       amo_flag = IS_AMO(PAY.buf[index].flags);
       csr_flag = IS_CSR(PAY.buf[index].flags);
 
-      PAY.buf[index].AL_index = REN->dispatch_inst(PAY.buf[index].C_valid,
-                                                   PAY.buf[index].C_log_reg,
-                                                   PAY.buf[index].C_phys_reg,
-                                                   load_flag,
-                                                   store_flag,
-                                                   branch_flag,
-                                                   amo_flag,
-                                                   csr_flag,
-                                                   PAY.buf[index].pc);
+      // PAY.buf[index].AL_index = REN->dispatch_inst(PAY.buf[index].C_valid,
+      //                                              PAY.buf[index].C_log_reg,
+      //                                              PAY.buf[index].C_phys_reg,
+      //                                              load_flag,
+      //                                              store_flag,
+      //                                              branch_flag,
+      //                                              amo_flag,
+      //                                              csr_flag,
+      //                                              PAY.buf[index].pc);
 
       // FIX_ME #7 END
 
