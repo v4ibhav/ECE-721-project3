@@ -183,22 +183,31 @@ void pipeline_t::rename2() {
       bool is_Load   =  IS_LOAD(PAY.buf[index].flags);
       bool is_Branch =  IS_BRANCH(PAY.buf[index].flags);
       bool is_Store  =  IS_STORE(PAY.buf[index].flags);   
+      bool no_chkpt_id_created = true;
 
       //3.6.1
-      if(is_AMO || is_CSR)
+      if(PAY.buf[index].good_instruction)
       {
-         REN->checkpoint();
-         instr_renamed_since_last_checkpoint = 0;
-         PAY.buf[index].checkPoint_ID = REN->get_checkpoint_ID(is_Load,is_Store,is_Branch,is_AMO,is_CSR);
+         actual = get_pipe()->peek(PAY.buf[index].db_index);
+         if(is_AMO || is_CSR)
+         {
+            REN->checkpoint();
+            instr_renamed_since_last_checkpoint = 0;
+            PAY.buf[index].checkPoint_ID = REN->get_checkpoint_ID(is_Load,is_Store,is_Branch,is_AMO,is_CSR);
+            bool no_chkpt_id_created = false;
+            
+         }
+         //3.6.2
+         else if(actual->a_exception)
+         {
+            REN->checkpoint();
+            instr_renamed_since_last_checkpoint = 0;
+            PAY.buf[index].checkPoint_ID = REN->get_checkpoint_ID(is_Load,is_Store,is_Branch,is_AMO,is_CSR);
+            bool no_chkpt_id_created = false;
+
+         }
       }
       
-      //3.6.2
-      else if(actual->a_exception)
-      {
-         REN->checkpoint();
-         instr_renamed_since_last_checkpoint = 0;
-         PAY.buf[index].checkPoint_ID = REN->get_checkpoint_ID(is_Load,is_Store,is_Branch,is_AMO,is_CSR);
-      }
       //renaming
       if(PAY.buf[index].A_valid) 
       {
@@ -224,21 +233,32 @@ void pipeline_t::rename2() {
       instr_renamed_since_last_checkpoint++;
 
       //3.6.1
-      if(is_AMO || is_CSR)
+      if(PAY.buf[index].good_instruction)
       {
-         PAY.buf[index].checkPoint_ID = REN->get_checkpoint_ID(is_Load,is_Store,is_Branch,is_AMO,is_CSR);
-         REN->checkpoint();
-         instr_renamed_since_last_checkpoint = 0;
+         if(is_AMO || is_CSR)
+         {
+            PAY.buf[index].checkPoint_ID = REN->get_checkpoint_ID(is_Load,is_Store,is_Branch,is_AMO,is_CSR);
+            REN->checkpoint();
+            instr_renamed_since_last_checkpoint = 0;
+            bool no_chkpt_id_created = false;
+
+         }
+
+         //3.6.3
+         else if((IS_BRANCH(PAY.buf[index].flags) && (PAY.buf[index].next_pc!=actual->a_next_pc)) 
+                     || instr_renamed_since_last_checkpoint == max_instr_bw_checkpoints)
+         {
+            PAY.buf[index].checkPoint_ID = REN->get_checkpoint_ID(is_Load,is_Store,is_Branch,is_AMO,is_CSR);
+            REN->checkpoint();
+            instr_renamed_since_last_checkpoint = 0;
+            bool no_chkpt_id_created = false;
+
+
+         }
       }
-
-      //3.6.3
-      else if((IS_BRANCH(PAY.buf[index].flags) && (PAY.buf[index].next_pc!=actual->a_next_pc)) 
-                  || instr_renamed_since_last_checkpoint == max_instr_bw_checkpoints)
-      {
+      if(no_chkpt_id_created){
          PAY.buf[index].checkPoint_ID = REN->get_checkpoint_ID(is_Load,is_Store,is_Branch,is_AMO,is_CSR);
-         REN->checkpoint();
-         instr_renamed_since_last_checkpoint = 0;
-
+         no_chkpt_id_created = false;
       }
       // FIX_ME #3 END
 
@@ -256,7 +276,6 @@ void pipeline_t::rename2() {
 
       // FIX_ME #4 BEGIN
       // RENAME2[i].branch_mask = REN->get_branch_mask();
-         PAY.buf[index].checkPoint_ID = REN->get_checkpoint_ID(is_Load,is_Store,is_Branch,is_AMO,is_CSR);
       // FIX_ME #4 END
 
       // FIX_ME #5

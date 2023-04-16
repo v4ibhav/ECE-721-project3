@@ -28,6 +28,7 @@ renamer::renamer(uint64_t n_log_regs,uint64_t n_phys_regs,uint64_t n_branches,ui
 
     ////////////////checkpoint initializaiton//////////
     CPR_BUFFER.checkPointInfo.resize(n_branches);
+    CPR_BUFFER.size =n_branches;
     for(int i =0 ; i<n_branches;i++)
     {
         CPR_BUFFER.checkPointInfo[i].Checkpoint_of_rmt.resize(n_log_regs);
@@ -36,6 +37,8 @@ renamer::renamer(uint64_t n_log_regs,uint64_t n_phys_regs,uint64_t n_branches,ui
     //////////////PRF and PRF bits allocation///////////
     PRF.resize(n_phys_regs);
     PRF_bits.resize(n_phys_regs);
+    usage_Counter.resize(n_phys_regs);
+    unmapped_Bit.resize(n_phys_regs);
     foru(i,n_phys_regs)
     {
         PRF[i] = 0;
@@ -56,7 +59,7 @@ renamer::renamer(uint64_t n_log_regs,uint64_t n_phys_regs,uint64_t n_branches,ui
         unmapped_Bit[i] =    0;
     }
     //////////////GBM set///////////////////////////////
-    GBM = 0;
+    // GBM = 0;
 
     ///////////////Private variables////////////////////
     number_of_branches      =   n_branches;
@@ -65,7 +68,7 @@ renamer::renamer(uint64_t n_log_regs,uint64_t n_phys_regs,uint64_t n_branches,ui
     total_active_instruction=   n_active;
     
     /////////////////Branch Checkpoint allocation///////
-    Branch_CheckPoint.resize(number_of_branches);
+    // Branch_CheckPoint.resize(number_of_branches);
 
         
 }
@@ -155,7 +158,7 @@ void renamer::checkpoint()
     int tail = CPR_BUFFER.checkPointTail;
     int head = CPR_BUFFER.checkPointHead;
     //checkpoint the rmt
-    CPR_BUFFER.checkPointInfo[tail].Checkpoint_of_rmt = RMT;
+    CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointTail].Checkpoint_of_rmt = RMT;
     //update the usage counter
     foru(i,number_of_logical_reg)
     {
