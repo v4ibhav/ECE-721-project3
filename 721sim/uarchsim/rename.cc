@@ -256,6 +256,7 @@ void pipeline_t::rename2() {
 
       // FIX_ME #4 BEGIN
       // RENAME2[i].branch_mask = REN->get_branch_mask();
+      RENAME2[i].branch_mask = REN->get_branch_mask(PAY.buf[index].branch_ID);
       // FIX_ME #4 END
 
       // FIX_ME #5
