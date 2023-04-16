@@ -103,8 +103,8 @@ pipeline_t::pipeline_t(
   this->dispatch_width = dispatch_width;
   this->issue_width = issue_width;
   this->retire_width = retire_width;
-  this->max_instr_bw_checkpoints = rob_size/num_chkpts;
-  this->instr_renamed_since_last_checkpoint = 0;
+  max_instr_bw_checkpoints = rob_size/num_chkpts;
+  instr_renamed_since_last_checkpoint = 0;
 
   #ifdef RISCV_MICRO_DEBUG
     mkdir("micros_log",S_IRWXU);
