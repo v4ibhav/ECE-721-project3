@@ -74,6 +74,8 @@ class renamer{
     vector<uint64_t> PRF; 
     vector<bool> unmapped_Bit;
     vector<uint64_t> usage_Counter;  
+    void map(uint64_t phy_reg);
+    void unmap(uint64_t phy_reg);
     vector<bool> PRF_bits;
     //gbm
 	uint64_t GBM;
@@ -166,17 +168,21 @@ class renamer{
 	void set_ready(uint64_t phys_reg);
 	void write(uint64_t phys_reg, uint64_t value);
 	void set_complete(unsigned int checkPoint_ID);
-    void resolve(uint64_t AL_index,
-		     uint64_t branch_ID,
-		     bool correct);
+    // void resolve(uint64_t AL_index,
+	// 	     uint64_t branch_ID,
+	// 	     bool correct);
 	// bool precommit(bool &completed,
     //                    bool &exception, bool &load_viol, bool &br_misp, bool &val_misp,
 	//                bool &load, bool &store, bool &branch, bool &amo, bool &csr,
 	// 	       uint64_t &PC);
+
+    void rollback(uint64_t chkpt_id,  bool next, uint64_t
+                    &total_loads, uint64_t &total_stores, uint64_t &total_branches);
     bool precommit(uint64_t &chkpt_id, uint64_t &num_loads,
                 uint64_t &num_stores, uint64_t &num_branches, bool &amo, bool &csr,
                 bool &exception);
 	void commit(uint64_t log_reg);
+
 	void squash();
     void set_exception(unsigned int checkpoint_ID);
 	void set_load_violation(uint64_t AL_index);

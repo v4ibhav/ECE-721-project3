@@ -65,7 +65,8 @@ void pipeline_t::writeback(unsigned int lane_number) {
             //    mode... since they are never selectively squashed by branches anyway.
 
 	    // FIX_ME #15a BEGIN
-            REN->resolve(PAY.buf[index].AL_index,PAY.buf[index].branch_ID, true); 
+            // REN->resolve(PAY.buf[index].AL_index,PAY.buf[index].branch_ID, true);
+            REN->rollback(0,0,0,0,0,0);
 	    // FIX_ME #15a END
          }
          else if (PAY.buf[index].next_pc == PAY.buf[index].c_next_pc) {
@@ -87,7 +88,8 @@ void pipeline_t::writeback(unsigned int lane_number) {
             //    * See pipeline.h for details about the two arguments of resolve().
 
 	    // FIX_ME #15b BEGIN
-            REN->resolve(PAY.buf[index].AL_index,PAY.buf[index].branch_ID, true); 
+            // REN->resolve(PAY.buf[index].AL_index,PAY.buf[index].branch_ID, true); 
+            REN->rollback(0,0,0,0,0,0);
             resolve(PAY.buf[index].branch_ID, true);
 	    // FIX_ME #15b END
          }
@@ -116,7 +118,8 @@ void pipeline_t::writeback(unsigned int lane_number) {
             //    This will restore the RMT, FL, and AL, and also free this and future checkpoints... etc.
 
             // FIX_ME #15c BEGIN
-            REN->resolve(PAY.buf[index].AL_index,PAY.buf[index].branch_ID, false); 
+            // REN->resolve(PAY.buf[index].AL_index,PAY.buf[index].branch_ID, false); 
+            REN->rollback(0,0,0,0,0,0);
             
             // FIX_ME #15c END
 
