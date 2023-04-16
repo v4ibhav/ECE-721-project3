@@ -104,7 +104,7 @@ pipeline_t::pipeline_t(
   this->issue_width = issue_width;
   this->retire_width = retire_width;
   this->max_instr_bw_checkpoints = rob_size/num_chkpts;
-  this->instr_renamed_since_last_chkpt = 0;
+  this->instr_renamed_since_last_checkpoint = 0;
 
   #ifdef RISCV_MICRO_DEBUG
     mkdir("micros_log",S_IRWXU);
@@ -479,7 +479,7 @@ static reg_t execute_insn(pipeline_t* p, reg_t pc, insn_fetch_t fetch)
 }
 
 //Scope of this function is just this file
-void pipeline_t update_timer(state_t* state, size_t instret)
+void pipeline_t:: update_timer(state_t* state, size_t instret)
 {
   uint64_t count0 = (uint64_t)(uint32_t)state->count;
   state->count += instret;

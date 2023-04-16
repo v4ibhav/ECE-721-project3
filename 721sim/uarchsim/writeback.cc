@@ -66,11 +66,15 @@ void pipeline_t::writeback(unsigned int lane_number) {
 
 	    // FIX_ME #15a BEGIN
             // REN->resolve(PAY.buf[index].AL_index,PAY.buf[index].branch_ID, true);
-            REN->rollback(0,0,0,0,0,0);
+            // REN->rollback(0,0,0,0,0);
+            //saving the branch ID and AL index to be used in retire
+
+            //retire 
+            
 	    // FIX_ME #15a END
          }
          else if (PAY.buf[index].next_pc == PAY.buf[index].c_next_pc) {
-            // Branch was predicted correctly.
+            // Branch was predicted correctly.cd
 
             // FIX_ME #15b
             // The simulator is running in real branch prediction mode, and the branch was correctly predicted.
@@ -89,7 +93,7 @@ void pipeline_t::writeback(unsigned int lane_number) {
 
 	    // FIX_ME #15b BEGIN
             // REN->resolve(PAY.buf[index].AL_index,PAY.buf[index].branch_ID, true); 
-            REN->rollback(0,0,0,0,0,0);
+            // REN->rollback(0,0,0,0,0);
             resolve(PAY.buf[index].branch_ID, true);
 	    // FIX_ME #15b END
          }
@@ -119,7 +123,7 @@ void pipeline_t::writeback(unsigned int lane_number) {
 
             // FIX_ME #15c BEGIN
             // REN->resolve(PAY.buf[index].AL_index,PAY.buf[index].branch_ID, false); 
-            REN->rollback(0,0,0,0,0,0);
+            // REN->rollback(0,0,0,0,0);
             
             // FIX_ME #15c END
 

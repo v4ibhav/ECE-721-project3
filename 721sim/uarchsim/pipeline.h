@@ -183,9 +183,9 @@ public:
 	    uint32_t  issue_width,
 	    uint32_t  retire_width,
 	    uint32_t  fu_lane_matrix[],
-	    uint32_t  fu_lat[],
-			uint32_t  max_instr_bw_checkpoints,
-			uint64_t  instr_renamed_since_last_checkpoint
+	    uint32_t  fu_lat[]
+		// uint32_t  max_instr_bw_checkpoints,
+		// uint64_t  instr_renamed_since_last_checkpoint
 	);
 
 	~pipeline_t();
@@ -232,7 +232,7 @@ public:
   uint64_t get_pc(){return get_state()->pc;}
   uint32_t get_instruction(uint64_t inst_pc);
   uint32_t  max_instr_bw_checkpoints;
-	uint64_t  instr_renamed_since_last_checkpoint;
+  uint64_t  instr_renamed_since_last_checkpoint;
   void update_timer(state_t* state, size_t instret);
 
 private:
