@@ -10,7 +10,7 @@ void pipeline_t::check_single(reg_t micro, reg_t isa, db_t* actual, const char *
         PAY.dump(this, PAY.head, stderr);
         pipe->dump(this, actual, stderr);
       #endif
-      printf("Instruction %.0f, Cycle %.0f: %s Pipeline:%" PRIreg " vs. isaSim:%" PRIreg ".\n", (double)num_insn, (double)cycle, desc, micro, isa);
+      //printf("Instruction %.0f, Cycle %.0f: %s Pipeline:%" PRIreg " vs. isaSim:%" PRIreg ".\n", (double)num_insn, (double)cycle, desc, micro, isa);
       assert(0);
    }
 }
@@ -18,7 +18,7 @@ void pipeline_t::check_single(reg_t micro, reg_t isa, db_t* actual, const char *
 void pipeline_t::check_double(reg_t micro0, reg_t micro1, reg_t isa0, reg_t isa1, const char *desc) {
    if ((micro0 != isa0) || (micro1 != isa1)) {
       logging_on = true;
-      printf("Instruction %.0f, Cycle %.0f: %s Pipeline:%" PRIreg ",%" PRIreg " vs. isaSim:%" PRIreg ",%" PRIreg ".\n", (double)num_insn, (double)cycle, desc, micro0, micro1, isa0, isa1);
+      //printf("Instruction %.0f, Cycle %.0f: %s Pipeline:%" PRIreg ",%" PRIreg " vs. isaSim:%" PRIreg ",%" PRIreg ".\n", (double)num_insn, (double)cycle, desc, micro0, micro1, isa0, isa1);
       assert(0);
    }
 }
@@ -52,7 +52,7 @@ void pipeline_t::check_state(state_t* micro_state, state_t* isa_state, db_t* act
         pipe->dump(this, actual, stderr);
       #endif
       isa_state->dump(stderr);
-      printf("Instruction %.0f, Cycle %.0f: State check failed.\n", (double)num_insn, (double)cycle);
+      //printf("Instruction %.0f, Cycle %.0f: State check failed.\n", (double)num_insn, (double)cycle);
       assert(0);
    }
 }

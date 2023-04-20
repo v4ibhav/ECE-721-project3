@@ -105,7 +105,7 @@ void pipeline_t::execute(unsigned int lane_number) {
             }
          }
       }
-      else {
+      else if (!IS_AMO(PAY.buf[index].flags) && !IS_CSR(PAY.buf[index].flags)) {
          // Execute the ALU-type instruction on the ALU.
          try {
             alu(index);
@@ -271,6 +271,8 @@ void pipeline_t::load_replay() {
       // 2. Set the completed bit for this instruction in the Active List.
 
       // FIX_ME #18b BEGIN
+      //cout<<"execute: set_complete: "<<endl;
+
       REN->set_complete(PAY.buf[index].checkPoint_ID);
       // FIX_ME #18b END
    }

@@ -244,6 +244,7 @@ void pipeline_t::dispatch() {
             // *** FIX_ME #10b (part 1): Set completed bit in Active List.
             // FIX_ME #10b1 BEGIN
             // REN->set_complete(PAY.buf[index].AL_index);
+            //cout<<"dispatch: set_complete: "<<endl;
             REN->set_complete(PAY.buf[index].checkPoint_ID);
             // FIX_ME #10b1 END
 

@@ -10,7 +10,8 @@
 bool lsu::disambiguate(unsigned int lq_index,
                        unsigned int sq_index, bool sq_index_phase,
                        bool& forward,
-                       unsigned int& store_entry) {
+                       unsigned int& store_entry,
+				       bool& partial) {	
 	bool stall;		// return value
 	uint64_t max_size;
 	uint64_t mask;
@@ -45,19 +46,24 @@ bool lsu::disambiguate(unsigned int lq_index,
 			         (LQ[lq_index].addr    & mask)) {
 				// There is a conflict.
 				if (SQ[store_entry].size != LQ[lq_index].size) {
-					stall = true;    // stall: partial conflict scenarios are hard
+ 					//stall = true;    // stall: partial conflict scenarios are hard
+ 					// CPR deadlock kluge.
+ 					forward = true;
+ 					partial = true;
 				}
 				else if (!SQ[store_entry].value_avail) {
 					stall = true;    // stall: must wait for value to be available
 				}
 				else {
 					forward = true;    // forward: sizes match and value is available
+ 					partial = false;
+
 				}
 			}
 		} while ((store_entry != sq_head) && !stall && !forward);
 	}
-
 	return(stall);
+
 }	// disambiguate()
 
 bool lsu::ld_violation(unsigned int sq_index,
@@ -158,6 +164,8 @@ lsu::lsu(unsigned int lq_size, unsigned int sq_size, unsigned int Tid, mmu_t* _m
 	n_true_stall = 0;
 	n_false_stall = 0;
 	n_load_violation = 0;
+ 	n_cpr_deadlock_kluge = 0;
+
 }
 
 lsu::~lsu(){
@@ -218,6 +226,8 @@ void lsu::dispatch(bool load,
 		LQ[lq_tail].stat_forward = false;
 		LQ[lq_tail].stat_load_violation = false;
 		LQ[lq_tail].stat_late_store_match = false;
+ 		LQ[lq_tail].stat_cpr_deadlock_kluge = false;
+
 
     #ifdef RISCV_MICRO_DEBUG
       LOG(proc->lsu_log,proc->cycle,proc->PAY.buf[pay_index].sequence,proc->PAY.buf[pay_index].pc,"Dispatching load lq entry %u",lq_tail);
@@ -258,6 +268,8 @@ void lsu::dispatch(bool load,
 		SQ[sq_tail].stat_forward = false;
 		SQ[sq_tail].stat_load_violation = false;
 		SQ[sq_tail].stat_late_store_match = false;
+ 		SQ[sq_tail].stat_cpr_deadlock_kluge = false;
+
 
     #ifdef RISCV_MICRO_DEBUG
       LOG(proc->lsu_log,proc->cycle,proc->PAY.buf[pay_index].sequence,proc->PAY.buf[pay_index].pc,"Dispatching store sq entry %u",sq_tail);
@@ -442,6 +454,8 @@ void lsu::execute_load(cycle_t cycle,
                        unsigned int sq_index, bool sq_index_phase) {
 	bool stall_disambig;
 	bool forward;
+ 	bool partial;
+	
 	unsigned int store_entry;
 
 	assert(LQ[lq_index].valid);
@@ -455,14 +469,15 @@ void lsu::execute_load(cycle_t cycle,
               proc->get_state()->load_reservation = LQ[lq_index].addr;
            }
            else {
-	      // Load reservation has not yet reached the head of the LQ and must stall.
-	      return;
-	   }
+			// Load reservation has not yet reached the head of the LQ and must stall.
+			return;
+			}
         }
 
   inc_counter(spec_load_count);
 
-	stall_disambig = disambiguate(lq_index, sq_index, sq_index_phase, forward, store_entry);
+ 	stall_disambig = disambiguate(lq_index, sq_index, sq_index_phase, forward, store_entry, partial);
+
 
   #ifdef RISCV_MICRO_DEBUG
     LOG(proc->lsu_log,proc->cycle,proc->PAY.buf[LQ[lq_index].pay_index].sequence,proc->PAY.buf[LQ[lq_index].pay_index].pc,"Executing load lq entry %u",lq_index);
@@ -473,6 +488,36 @@ void lsu::execute_load(cycle_t cycle,
 		// STATS
 		LQ[lq_index].stat_load_stall_disambig = true;
 	}
+ 	else if (forward && partial) {
+            uint64_t load_chkpt_id = proc->PAY.buf[LQ[lq_index].pay_index].checkPoint_ID;
+            uint64_t store_chkpt_id = proc->PAY.buf[SQ[store_entry].pay_index].checkPoint_ID;
+ 	   if (load_chkpt_id == store_chkpt_id) {
+ 	      // The conflicting store and load of different sizes are in the same checkpoint interval.
+ 	      // Don't stall the load, otherwise CPR will deadlock.
+ 	      // This should be rare, so rather than model the complexity of partial store-load forwarding,
+ 	      // let's "cheat" by using the actual load value from the functional simulator.
+ 	      // Count how often we had to do this to gauge simulation error.
+ 	      if (proc->PAY.buf[LQ[lq_index].pay_index].good_instruction) {
+                  db_t *actual = proc->get_pipe()->peek(proc->PAY.buf[LQ[lq_index].pay_index].db_index);
+ 	         LQ[lq_index].value = actual->a_rdst[0].value;
+ 	      }
+ 	      else {
+ 		 // Load will in any case get squashed (incorrect control-flow path), so use a sentinel value.
+ 	         LQ[lq_index].value = 0xDEADBEEF;
+ 	      }
+ 	      // The load value is now available.
+ 	      LQ[lq_index].value_avail = true;
+ 
+ 	      // STATS
+ 	      LQ[lq_index].stat_cpr_deadlock_kluge = true;
+ 	   }
+ 	   else {
+ 	      // The conflicting store and load of different sizes are in different checkpoint intervals.
+ 	      // Stalling the load will not cause CPR to deadlock.
+ 	      // STATS
+ 	      LQ[lq_index].stat_load_stall_disambig = true;
+ 	   }
+ 	}
 	else if (forward) {
 		// STATS
 		LQ[lq_index].stat_forward = true;
@@ -693,6 +738,8 @@ void lsu::train(bool load) {
          n_forward++;
       if (LQ[lq_head].stat_load_stall_miss)
          n_stall_miss_l++;
+      if (LQ[lq_head].stat_cpr_deadlock_kluge)
+         n_cpr_deadlock_kluge++;
    }
    else {
       // SQ should not be empty.
@@ -863,6 +910,9 @@ void lsu::dump_stats(FILE* fp) {
 	fprintf(fp, "  miss stall       = %d (%.2f%%)\n",
 	        n_stall_miss_s,
 	        100.0*(double)n_stall_miss_s/(double)n_store);
+	fprintf(fp, "cpr deadlock kluge = %d (%.2f%%)\n",
+	        n_cpr_deadlock_kluge,
+	        100.0*(double)n_cpr_deadlock_kluge/(double)n_load);
 
 	fprintf(fp, "MDP quick stats\n");
 	fprintf(fp, "  false stalls     = %d\n", n_false_stall);

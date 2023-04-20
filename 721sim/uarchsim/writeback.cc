@@ -94,7 +94,7 @@ void pipeline_t::writeback(unsigned int lane_number) {
 	    // FIX_ME #15b BEGIN
             // REN->resolve(PAY.buf[index].AL_index,PAY.buf[index].branch_ID, true); 
             // REN->rollback(0,0,0,0,0);
-            resolve(PAY.buf[index].branch_ID, true);
+            //resolve(PAY.buf[index].branch_ID, true);
 	    // FIX_ME #15b END
          }
          else {
@@ -148,7 +148,6 @@ void pipeline_t::writeback(unsigned int lane_number) {
 
             // Rollback PAY to the point of the branch.
             PAY.rollback(index);
-            instr_renamed_since_last_checkpoint = 0;
          }
       }
 
@@ -163,6 +162,7 @@ void pipeline_t::writeback(unsigned int lane_number) {
 
       // FIX_ME #16 BEGIN
       // REN->set_complete(PAY.buf[index].AL_index);
+         // //cout<<"PAY.buf[index].checkPoint_ID: "<<PAY.buf[index].checkPoint_ID<<endl;
          REN->set_complete(PAY.buf[index].checkPoint_ID);
       // FIX_ME #16 END
 

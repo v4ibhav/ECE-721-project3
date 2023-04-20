@@ -251,8 +251,8 @@ pipeline_t::pipeline_t(
 	     ex_depth = fu_lat[j];
 	  }
           else if (ex_depth != fu_lat[j]) {
-	     printf("Error: you tried to configure multiple FU types of different latencies to the same lane.\n");
-	     printf("Adjust fu_lane_matrix[] and/or fu_lat[] so that a given lane has a single latency for all its FU types.\n");
+	     //printf("Error: you tried to configure multiple FU types of different latencies to the same lane.\n");
+	     //printf("Adjust fu_lane_matrix[] and/or fu_lat[] so that a given lane has a single latency for all its FU types.\n");
 	     exit(-1);
           }
        }
@@ -261,8 +261,8 @@ pipeline_t::pipeline_t(
        Execution_Lanes[i].init(ex_depth);
     }
     else {
-       printf("Error: no FU type is configured to lane %d.  Therefore, this lane's latency is unknown.\n", i);
-       printf("Adjust fu_lane_matrix[] such that at least one FU type is configured to lane %d.\n", i);
+       //printf("Error: no FU type is configured to lane %d.  Therefore, this lane's latency is unknown.\n", i);
+       //printf("Adjust fu_lane_matrix[] such that at least one FU type is configured to lane %d.\n", i);
        exit(-1);
     }
   }

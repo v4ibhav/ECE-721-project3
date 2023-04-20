@@ -49,14 +49,14 @@ void pipeline_t::retire(size_t& instret, size_t instret_limit) {
    // FIX_ME #17a BEGIN
    // head_valid = REN->precommit(completed, exception, load_viol, br_misp, val_misp, load, store, branch, amo, csr, offending_PC);
    //3.9.1
-   bool proceed = REN->precommit(RETSTATE.chkpt_id,
-   RETSTATE.num_loads_left, RETSTATE.num_stores_left,
-   RETSTATE.num_branches_left, RETSTATE.amo, RETSTATE.csr,
-   RETSTATE.exception);
-   bool flag = false;
    // FIX_ME #17a END
    if(RETSTATE.state == RETIRE_IDLE)
    {
+      bool proceed = REN->precommit(RETSTATE.chkpt_id,
+      RETSTATE.num_loads_left, RETSTATE.num_stores_left,
+      RETSTATE.num_branches_left, RETSTATE.amo, RETSTATE.csr,
+      RETSTATE.exception);
+      bool flag = false;
       if(!proceed)   return;
       else{
          // Sanity checks of the 'amo' and 'csr' flags.
@@ -78,7 +78,7 @@ void pipeline_t::retire(size_t& instret, size_t instret_limit) {
          // amo, excluding load-with-reservation(LR) and store-conditional (SC)
             RETSTATE.exception = execute_amo();
          }
-         else if (csr) {
+         else if (RETSTATE.csr) {
             RETSTATE.exception = execute_csr();
          } 
          // This is probably optional.
@@ -89,6 +89,7 @@ void pipeline_t::retire(size_t& instret, size_t instret_limit) {
       }
       if(RETSTATE.exception)
       {
+         REN->set_exception(RETSTATE.chkpt_id);
          trap = PAY.buf[PAY.head].trap.get();
 
          // CSR exceptions are micro-architectural exceptions and are
@@ -119,6 +120,9 @@ void pipeline_t::retire(size_t& instret, size_t instret_limit) {
 
          // Flush PAY.
          PAY.clear();
+
+         update_timer(&state, 1); // Update timer by 1 retired instr.
+         assert(instret <= instret_limit);
       }
 
       else //restate exception is false
@@ -132,36 +136,44 @@ void pipeline_t::retire(size_t& instret, size_t instret_limit) {
    {
       for(unsigned int i = 0; i<RETIRE_WIDTH; i++)
       {
-         if(RETSTATE.num_loads_left != 0)
+         if(RETSTATE.num_loads_left > 0)
          {
             LSU.train(true);
-            LSU.commit(true,RETSTATE.amo);
-            RETSTATE.num_loads_left--;
-            amo_success = LSU.commit(load, amo); //also capture and assert as in the baseline code
+            amo_success = LSU.commit(true,RETSTATE.amo);
+            // amo_success = LSU.commit(true, RETSTATE.amo); //also capture and assert as in the baseline code
             assert(amo_success); 
+            RETSTATE.num_loads_left--;
 
          }
-         else if(RETSTATE.num_stores_left != 0)
+      }
+
+      for(unsigned int i = 0; i<RETIRE_WIDTH; i++){
+         if(RETSTATE.num_stores_left > 0)
          {
             LSU.train(false);
-            LSU.commit(false,RETSTATE.amo);
-            RETSTATE.num_stores_left--;
-            amo_success = LSU.commit(load, amo); //also capture and assert as in the baseline code
+            // LSU.commit(false,RETSTATE.amo);
+            amo_success = LSU.commit(false, RETSTATE.amo); //also capture and assert as in the baseline code
             assert(amo_success); 
+            RETSTATE.num_stores_left--;
          }
-         else if(RETSTATE.num_branches_left != 0)
+
+      }
+      for(unsigned int i = 0; i<RETIRE_WIDTH; i++){
+         if(RETSTATE.num_branches_left != 0)
          {
             FetchUnit->commit();
             RETSTATE.num_branches_left--;
          }
-         else if(RETSTATE.log_reg !=(NXPR+NFPR))
+      }
+      for(unsigned int i = 0; i<RETIRE_WIDTH; i++){
+         if(RETSTATE.log_reg !=(NXPR+NFPR))
          {
             REN->commit(RETSTATE.log_reg);
+            RETSTATE.log_reg++;
 
          }
-         else break;
       }
-      if(RETSTATE.num_loads_left == 0 && RETSTATE.num_stores_left == 0 && RETSTATE.num_branches_left == 0 && RETSTATE.log_reg == (NXPR+NFPR))
+      if((RETSTATE.num_loads_left == 0) && (RETSTATE.num_stores_left == 0) && (RETSTATE.num_branches_left == 0) && (RETSTATE.log_reg == (NXPR+NFPR)))
       {
          REN->free_checkpoint();
          RETSTATE.state = RETIRE_FINALIZE;
@@ -200,7 +212,7 @@ void pipeline_t::retire(size_t& instret, size_t instret_limit) {
                FetchUnit->flush(next_inst_pc);
 
          // Pop the instruction from PAY.
-         // if (!PAY.buf[PAY.head].split) PAY.pop();
+          if (!PAY.buf[PAY.head].split) PAY.pop();
          PAY.pop();
       }
       else{

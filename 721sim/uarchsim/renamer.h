@@ -117,6 +117,7 @@ class renamer{
 	uint64_t get_branch_mask();
 	uint64_t rename_rsrc(uint64_t log_reg);
 	uint64_t rename_rdst(uint64_t log_reg);
+    void  inc_usage_counter();
 	
 	// bool stall_dispatch(uint64_t bundle_inst);
     bool stall_checkpoint(uint64_t bundle_chkpts);

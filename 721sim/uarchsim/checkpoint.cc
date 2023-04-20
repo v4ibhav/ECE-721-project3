@@ -7,7 +7,7 @@
 
 #define CHECKPOINT_VERSION 2
 
-#define DEBUG_CHECKPOINTS if (knobs::debug_checkpoints) printf
+#define DEBUG_CHECKPOINTS if (knobs::debug_checkpoints) //printf
 
 float weights[15];    // weights of checkpoints
 
