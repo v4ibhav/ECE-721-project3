@@ -38,7 +38,7 @@ bool issue_queue::stall(unsigned int bundle_inst) {
 	return(fl_length < bundle_inst);
 }
 
-void issue_queue::dispatch(unsigned int index, unsigned long long branch_mask, unsigned int lane_id,
+void issue_queue::dispatch(unsigned int index, /*unsigned long long chkpt_id*/unsigned long long branch_mask, unsigned int lane_id,
                            bool A_valid, bool A_ready, unsigned int A_tag,
                            bool B_valid, bool B_ready, unsigned int B_tag,
                            bool D_valid, bool D_ready, unsigned int D_tag) {
@@ -58,7 +58,8 @@ void issue_queue::dispatch(unsigned int index, unsigned long long branch_mask, u
 	assert(!q[free].valid);
 	q[free].valid = true;
 	q[free].index = index;
-	q[free].branch_mask = branch_mask;
+	//q[free].branch_mask = branch_mask;
+	// q[free].chkpt_id = chkpt_id;	//check?@TODO
 	q[free].lane_id = lane_id;
 	q[free].A_valid = A_valid;
 	q[free].A_ready = A_ready;
@@ -295,6 +296,21 @@ void issue_queue::squash(unsigned int branch_ID) {
 		}
 	}
 }
+
+//Replace void issue_queue::squash(unsigned int branch_ID) with void issue_queue::squash(uint64_t squash_mask)
+//also decrementing the usage counters of its source and destination physical registers
+// void issue_queue::squash(uint64_t squash_mask){
+// 	for (unsigned int i = 0; i < size; i++) {
+// 		if(q[i].valid && BIT_IS_ONE(q[i].chkpt_id, squash_mask)){
+// 			remove(i);
+// 			REN->dec_usage_counter(PAY.buf[q[i].index].A_phys_reg);
+// 			REN->dec_usage_counter(PAY.buf[q[i].index].B_phys_reg);
+// 			REN->dec_usage_counter(PAY.buf[q[i].index].C_phys_reg);
+// 			if(PAY.buf[q[i].index].D_valid)
+// 				REN->dec_usage_counter(PAY.buf[q[i].index].D_phys_reg);
+// 		}
+// 	}
+// }
 
 
 void issue_queue::dump_iq(pipeline_t* proc, unsigned int index,FILE* file)

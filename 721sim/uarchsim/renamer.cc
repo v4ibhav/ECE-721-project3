@@ -191,15 +191,67 @@ void renamer::set_complete(unsigned int checkPoint_ID)
 
 
 //3.9.6 adding rollback function
-void renamer::rollback(uint64_t chkpt_id, bool next, uint64_t &total_loads, 
+uint64_t renamer::rollback(uint64_t chkpt_id, bool next, uint64_t &total_loads, 
                             uint64_t &total_stores, uint64_t &total_branches)
 {
-    int current_chkpt  = chkpt_id;
+    int rollback_checkpoint  = chkpt_id;
     if(next)
     {
-        current_chkpt = chkpt_id+1;
+        rollback_checkpoint = (chkpt_id+1) % (CPR_BUFFER.size);//modulo
+    }
+    //asserting valid/allocated(for allocation need to check if it is not null?@TODO)
+    assert(CPR_BUFFER.checkPointInfo[rollback_checkpoint].Checkpoint_of_rmt.empty() == false);
+    if(CPR_BUFFER.checkPointHeadPhase == CPR_BUFFER.checkPointTailPhase)
+    {
+        assert((rollback_checkpoint >= CPR_BUFFER.checkPointHead) && (rollback_checkpoint < CPR_BUFFER.checkPointTail));  
+    }
+    if(CPR_BUFFER.checkPointHeadPhase != CPR_BUFFER.checkPointTailPhase)
+    {
+        //check rollback is greater than equal to head and less than tail
+        assert(((rollback_checkpoint<CPR_BUFFER.size)  &&  (rollback_checkpoint >= CPR_BUFFER.checkPointHead))
+                                && ((rollback_checkpoint>0) &&(rollback_checkpoint < CPR_BUFFER.checkPointTail)));
     }
 
+    //restoring RMT
+    RMT = CPR_BUFFER.checkPointInfo[rollback_checkpoint].Checkpoint_of_rmt;
+    //generating squash mask
+    uint64_t squash_mask = 0;
+    if(CPR_BUFFER.checkPointHeadPhase == CPR_BUFFER.checkPointTailPhase)
+        squash_mask = ((1 << (CPR_BUFFER.checkPointTail-rollback_checkpoint+1)) - 1) << (rollback_checkpoint-1);
+    if(CPR_BUFFER.checkPointHeadPhase != CPR_BUFFER.checkPointTailPhase)
+        squash_mask = ~((1 << (CPR_BUFFER.checkPointHead-CPR_BUFFER.checkPointTail+1)) - 1) << (CPR_BUFFER.checkPointHead-1);
+    //squashing younger checkpoints - by calling free_checkpoint()
+    uint64_t first_one;
+    uint64_t first_zero;
+    for(uint64_t i=0; i<64; i++){
+        if(squash_mask&(1<<i) == 1){
+            first_one = i;  //for 01110000 first_one will be 4
+            break;
+        }  
+    }
+    for(uint64_t j=first_one; j<64; j++){
+        if(squash_mask&(1<<j) == 0){
+            first_zero = j; //for 01110000 first_zero will be 7
+            break;
+        }
+    }
+    //calculating load store and branch counts of to-be squashed checkpoints as well as squashing those checkpoints:
+    for(uint64_t k=first_one+1; k<first_zero; k++){
+        total_loads += CPR_BUFFER.checkPointInfo[k].load_Counter;
+        total_stores += CPR_BUFFER.checkPointInfo[k].store_Counter;
+        total_branches += CPR_BUFFER.checkPointInfo[k].branch_Counter;
+        squash_checkpoint(k);
+    }
+    //Reset the uncompleted instruction count, load count, store count, and branch count, all to 0, of the rollback checkpoint
+    CPR_BUFFER.checkPointInfo[rollback_checkpoint].load_Counter = 0;
+    CPR_BUFFER.checkPointInfo[rollback_checkpoint].store_Counter = 0;
+    CPR_BUFFER.checkPointInfo[rollback_checkpoint].branch_Counter = 0;
+    CPR_BUFFER.checkPointInfo[rollback_checkpoint].instr_Counter = 0;
+    //Reset the amo, csr, and exception flags of the rollback checkpoint.
+    CPR_BUFFER.checkPointInfo[rollback_checkpoint].amo = 0;
+    CPR_BUFFER.checkPointInfo[rollback_checkpoint].csr = 0;
+    CPR_BUFFER.checkPointInfo[rollback_checkpoint].exception = 0;
+    return squash_mask;
 }
 
 //3.9.1 
@@ -259,7 +311,6 @@ void renamer::squash()
     //unamapped bit roll back
     unmapped_Bit.assign(unmapped_Bit.size(),1);
     usage_Counter.assign(usage_Counter.size(),0);
-
     //unmapped bit and usage counter reinstialized
     foru(i,RMT.size())
     {
@@ -434,7 +485,7 @@ void renamer::free_checkpoint()
     CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].csr = 0;
     CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].exception = 0;
     CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].instr_Counter = 0;
-    CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].Checkpoint_of_rmt.assign(CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].Checkpoint_of_rmt.size(),0);
+    CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].Checkpoint_of_rmt.assign(CPR_BUFFER.checkPointInfo[CPR_BUFFER.checkPointHead].Checkpoint_of_rmt.size(),NULL);
     //update the head of the checkpoint buffer
     CPR_BUFFER.checkPointHead++;
     if(CPR_BUFFER.checkPointHead == CPR_BUFFER.size)
@@ -485,4 +536,29 @@ void renamer:: unmap(uint64_t phys_reg)
 void renamer:: map(uint64_t phys_reg)
 {
     unmapped_Bit[phys_reg] = 0;
+}
+
+void renamer::squash_checkpoint(uint64_t current)
+{
+    //first we have to decrement usage counter and unmap bits
+    for(uint64_t i=0; i<number_of_logical_reg; i++){
+        dec_usage_counter(CPR_BUFFER.checkPointInfo[current].Checkpoint_of_rmt[i]);
+        //need to check if usage_counter has become 0 => then unmap the bit.
+    }
+    //current is the checkpoint ID of the checkpoint to be squashed
+    CPR_BUFFER.checkPointInfo[current].load_Counter = 0;
+    CPR_BUFFER.checkPointInfo[current].store_Counter = 0;
+    CPR_BUFFER.checkPointInfo[current].branch_Counter = 0;
+    CPR_BUFFER.checkPointInfo[current].amo = 0;
+    CPR_BUFFER.checkPointInfo[current].csr = 0;
+    CPR_BUFFER.checkPointInfo[current].exception = 0;
+    CPR_BUFFER.checkPointInfo[current].instr_Counter = 0;
+    CPR_BUFFER.checkPointInfo[current].Checkpoint_of_rmt.assign(CPR_BUFFER.checkPointInfo[current].Checkpoint_of_rmt.size(),0);
+    //update the head of the checkpoint buffer
+    CPR_BUFFER.checkPointTail--;
+    if(CPR_BUFFER.checkPointTail<0)
+    {
+        CPR_BUFFER.checkPointTail = CPR_BUFFER.size-1;
+        CPR_BUFFER.checkPointHeadPhase = !CPR_BUFFER.checkPointHeadPhase;   //check?@TODO
+    }
 }

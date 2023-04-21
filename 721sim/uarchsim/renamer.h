@@ -144,7 +144,7 @@ class renamer{
 	//                bool &load, bool &store, bool &branch, bool &amo, bool &csr,
 	// 	       uint64_t &PC);
 
-    void rollback(uint64_t chkpt_id,  bool next, uint64_t
+    uint64_t rollback(uint64_t chkpt_id,  bool next, uint64_t
                     &total_loads, uint64_t &total_stores, uint64_t &total_branches);
     bool precommit(uint64_t &chkpt_id, uint64_t &num_loads,
                 uint64_t &num_stores, uint64_t &num_branches, bool &amo, bool &csr,
@@ -154,7 +154,7 @@ class renamer{
 	void squash();
     void set_exception(unsigned int checkpoint_ID);
 	// void set_load_violation(uint64_t AL_index);
-	// void set_branch_misprediction(uint64_t AL_index);
+	// void set_branch_misprediction    (uint64_t AL_index);
 	// void set_value_misprediction(uint64_t AL_index);
 	// bool get_exception(uint64_t AL_index);
     uint64_t enteries_in_freelist();
@@ -166,4 +166,5 @@ class renamer{
     void free_checkpoint();
     void inc_usage_counter(uint64_t phys_reg);
     void dec_usage_counter(uint64_t phys_reg);
+    void squash_checkpoint(uint64_t current);
 };
