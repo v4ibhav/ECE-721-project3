@@ -99,7 +99,8 @@ void pipeline_t::writeback(unsigned int lane_number) {
          }
          else {
             // Branch was mispredicted.
-
+            if(PAY.buf[index].good_instruction) {
+ 
             // Roll-back the Fetch Unit.
             FetchUnit->mispredict(PAY.buf[index].pred_tag,
 	    			  (PAY.buf[index].c_next_pc != INCREMENT_PC(PAY.buf[index].pc)),
@@ -128,6 +129,11 @@ void pipeline_t::writeback(unsigned int lane_number) {
             // FIX_ME #15c END
 
             // Restore the LQ/SQ.
+            uint64_t loads = 0;
+            uint64_t stores = 0;
+            uint64_t branches = 0;
+            uint64_t squash_mask = 0;
+            squash_mask = REN->rollback(PAY.buf[index].checkPoint_ID, true, loads, stores, branches);
             LSU.restore(PAY.buf[index].LQ_index, PAY.buf[index].LQ_phase, PAY.buf[index].SQ_index, PAY.buf[index].SQ_phase);
 
             // FIX_ME #15d
@@ -143,11 +149,13 @@ void pipeline_t::writeback(unsigned int lane_number) {
             //    * See pipeline.h for details about the two arguments of resolve().
 
             // FIX_ME #15d BEGIN
-            resolve(PAY.buf[index].branch_ID,false);
+            // resolve(PAY.buf[index].branch_ID,false);
+            selective_squash(squash_mask);
             // FIX_ME #15d END
 
             // Rollback PAY to the point of the branch.
             PAY.rollback(index);
+            }
          }
       }
 

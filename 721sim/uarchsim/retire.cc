@@ -89,7 +89,7 @@ void pipeline_t::retire(size_t& instret, size_t instret_limit) {
       }
       if(RETSTATE.exception)
       {
-         REN->set_exception(RETSTATE.chkpt_id);
+         // REN->set_exception(RETSTATE.chkpt_id);
          trap = PAY.buf[PAY.head].trap.get();
 
          // CSR exceptions are micro-architectural exceptions and are
@@ -98,6 +98,7 @@ void pipeline_t::retire(size_t& instret, size_t instret_limit) {
          // in the ISA.
          // This is a serialize trap - Refetch the CSR instruction
          reg_t jump_PC;
+         offending_PC = PAY.buf[PAY.head].pc;
          if (trap->cause() == CAUSE_CSR_INSTRUCTION) {
             jump_PC = offending_PC;
          } 
@@ -132,7 +133,7 @@ void pipeline_t::retire(size_t& instret, size_t instret_limit) {
       }
    }
 
-   if(RETSTATE.state == RETIRE_BULK_COMMIT)
+   else if(RETSTATE.state == RETIRE_BULK_COMMIT)
    {
       for(unsigned int i = 0; i<RETIRE_WIDTH; i++)
       {
@@ -180,7 +181,7 @@ void pipeline_t::retire(size_t& instret, size_t instret_limit) {
       }
    }
 
-   if(RETSTATE.state == RETIRE_FINALIZE)
+   else if(RETSTATE.state == RETIRE_FINALIZE)
    {
       // Keep track of the number of retired instructions.
       while( (PAY.head != PAY.tail) && (PAY.buf[PAY.head].checkPoint_ID == RETSTATE.chkpt_id) )

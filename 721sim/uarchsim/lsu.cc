@@ -653,6 +653,45 @@ void lsu::restore(unsigned int recover_lq_tail, bool recover_lq_tail_phase,
 	// Restore LQ.
 	/////////////////////////////
 
+	if(lq_tail_phase == recover_lq_tail_phase)
+	{
+		for(uint64_t i = recover_lq_tail;i<lq_tail;i++)
+		{
+			if(LQ[i].valid && LQ[i].addr_avail && !LQ[i].value_avail)
+			{
+				if(proc->PAY.buf[LQ[i].pay_index].C_valid)
+				{
+					proc->REN->dec_usage_counter(proc->PAY.buf[LQ[i].pay_index].C_phys_reg);
+				}
+			}
+		}
+
+	}
+
+	else{
+		for(uint64_t i = recover_lq_tail;i<lq_size;i++)
+		{
+			if(LQ[i].valid && LQ[i].addr_avail && !LQ[i].value_avail)
+			{
+				if(proc->PAY.buf[LQ[i].pay_index].C_valid)
+				{
+					proc->REN->dec_usage_counter(proc->PAY.buf[LQ[i].pay_index].C_phys_reg);
+				}
+			}
+		}
+		for(uint64_t i = 0;i<lq_tail;i++)
+		{
+			if(LQ[i].valid && LQ[i].addr_avail && !LQ[i].value_avail)
+			{
+				if(proc->PAY.buf[LQ[i].pay_index].C_valid)
+				{
+					proc->REN->dec_usage_counter(proc->PAY.buf[LQ[i].pay_index].C_phys_reg);
+				}
+			}
+		}
+
+		
+	}
 	// Restore tail state.
 	lq_tail = recover_lq_tail;
 	lq_tail_phase = recover_lq_tail_phase;
